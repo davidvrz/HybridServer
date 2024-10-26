@@ -17,8 +17,25 @@
  */
 package es.uvigo.esei.dai.hybridserver;
 
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
 public class Launcher {
   public static void main(String[] args) {
-    // TODO Ejecutar el servidor
+    HybridServer server = new HybridServer();
+
+    server.start();
+    System.out.println("Servidor iniciado en el puerto " + server.getPort());
+
+    try {
+      System.in.read(); // Esperar entrada del usuario
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+
+    server.close();
+    System.out.println("Servidor detenido.");
   }
 }
+

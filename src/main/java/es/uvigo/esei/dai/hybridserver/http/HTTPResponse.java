@@ -20,78 +20,97 @@ package es.uvigo.esei.dai.hybridserver.http;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class HTTPResponse {
-  public HTTPResponse() {
-    // TODO Completar
+	private HTTPResponseStatus status;
+    private String version;
+    private String content;
+    private Map<String, String> parameters;
+    
+    public HTTPResponse() {
+        this.status = HTTPResponseStatus.S200; // Estado por defecto
+        this.version = "HTTP/1.1"; // Versión por defecto
+        this.content = ""; // Contenido por defecto
+        this.parameters = new HashMap<>(); // Inicializar parámetros
+	}
+	
+    
+    public HTTPResponseStatus getStatus() {
+    	return this.status; 
   }
+	
+	public void setStatus(HTTPResponseStatus status) {
+		this.status = status;
+	}
+	
+	public String getVersion() {
+		return this.version;
+	}
+	
+	public void setVersion(String version) {
+		this.version = version;
+	}
 
-  public HTTPResponseStatus getStatus() {
-    // TODO Completar
-    return null;
-  }
+	public String getContent() {
+		return this.content;
+	}
 
-  public void setStatus(HTTPResponseStatus status) {
-  }
+	public void setContent(String content) {
+		this.content = content;
+	}
 
-  public String getVersion() {
-    // TODO Completar
-    return null;
-  }
+	public Map<String, String> getParameters() {
+		return this.parameters;
+	}
 
-  public void setVersion(String version) {
-  }
+	public String putParameter(String name, String value) {
+		return this.parameters.put(name, value);
+	}
 
-  public String getContent() {
-    // TODO Completar
-    return null;
-  }
+	public boolean containsParameter(String name) {
+		return this.parameters.containsKey(name);
+	}
 
-  public void setContent(String content) {
-  }
+	public String removeParameter(String name) {
+		return this.parameters.remove(name);
+	}
 
-  public Map<String, String> getParameters() {
-    // TODO Completar
-    return null;
-  }
+	public void clearParameters() {
+		this.parameters.clear();
+	}
 
-  public String putParameter(String name, String value) {
-    // TODO Completar
-    return null;
-  }
+	public List<String> listParameters() {
+		return new ArrayList<>(this.parameters.keySet());
+	}
+	
+	public void print(Writer writer) throws IOException {
+        // Escribir la línea de estado
+        writer.write(this.version + " " + this.status.getCode() + " " + this.status.getStatus() + "\r\n");
 
-  public boolean containsParameter(String name) {
-    // TODO Completar
-    return false;
-  }
+        // Escribir los parámetros de respuesta
+        for (Map.Entry<String, String> entry : this.parameters.entrySet()) {
+            writer.write(entry.getKey() + ": " + entry.getValue() + "\r\n");
+        }
 
-  public String removeParameter(String name) {
-    // TODO Completar
-    return null;
-  }
+        // Escribir una línea en blanco para separar los encabezados del contenido
+        writer.write("\r\n");
 
-  public void clearParameters() {
-  }
-
-  public List<String> listParameters() {
-    // TODO Completar
-    return null;
-  }
-
-  public void print(Writer writer) throws IOException {
-    // TODO Completar
-  }
-
-  @Override
-  public String toString() {
-    try (final StringWriter writer = new StringWriter()) {
-      this.print(writer);
-
-      return writer.toString();
-    } catch (IOException e) {
-      throw new RuntimeException("Unexpected I/O exception", e);
+        // Escribir el contenido de la respuesta
+        writer.write(this.content);
     }
-  }
+	
+	@Override
+	public String toString() {
+		try (final StringWriter writer = new StringWriter()) {
+			this.print(writer);
+			
+			return writer.toString();
+		} catch (IOException e) {
+			throw new RuntimeException("Unexpected I/O exception", e);
+		}
+	}
 }
