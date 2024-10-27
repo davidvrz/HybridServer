@@ -8,19 +8,16 @@ public class Page {
     private UUID uuid;
     private String content;
 
-    // Constructor con UUID y contenido, útil al recuperar desde la base de datos
     public Page(UUID uuid, String content) {
         this.uuid = uuid;
         this.content = content;
     }
 
-    // Constructor sin UUID, genera uno nuevo automáticamente
     public Page(String content) {
         this.uuid = UUID.randomUUID();
         this.content = content;
     }
 
-    // Getters y setters
     public UUID getUuid() {
         return uuid;
     }
@@ -28,20 +25,16 @@ public class Page {
     public String getContent() {
         return content;
     }
-/*
+
     public void setContent(String content) {
         this.content = content;
-        this.lastModifiedDate = LocalDateTime.now();
     }
-*/
    
     @Override
     public String toString() {
         return "Page{" +
                 "uuid=" + uuid +
                 ", content='" + content.substring(0, Math.min(30, content.length())) + "...'" +
-                ", createdDate=" + createdDate +
-                ", lastModifiedDate=" + lastModifiedDate +
                 '}';
     }
 

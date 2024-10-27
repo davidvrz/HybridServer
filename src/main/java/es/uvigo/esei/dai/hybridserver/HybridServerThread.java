@@ -5,79 +5,61 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.net.SocketException;
+import java.util.List;
 
+import es.uvigo.esei.dai.hybridserver.controller.ResourceController;
+import es.uvigo.esei.dai.hybridserver.http.HTTPParseException;
 import es.uvigo.esei.dai.hybridserver.http.HTTPRequest;
 import es.uvigo.esei.dai.hybridserver.http.HTTPResponse;
+import es.uvigo.esei.dai.hybridserver.http.HTTPResponseStatus;
+import es.uvigo.esei.dai.hybridserver.model.PagesDBDAO;
 
 public class HybridServerThread implements Runnable {
 	private final Socket socket;
+	private final ResourceController controller;
 
     public HybridServerThread(Socket clientSocket) {
         this.socket = clientSocket;
+        this.controller = new ResourceController();
     }
 
     @Override
     public void run() {
-    	try (Socket clientSocket = socket) {
-            //String requestLine = readRequest(clientSocket);
-    		BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-    		PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
-    		
-		    HTTPRequest request = new HTTPRequest(reader);
+    	try (BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        		PrintWriter writer = new PrintWriter(socket.getOutputStream(), true)) {
+    			
+    		HTTPRequest request = new HTTPRequest(reader);
 		    HTTPResponse response = new HTTPResponse();
-		
-		    // Configurar la respuesta
-		    String resourceName = request.getResourceChain();
-		    /*
-		    if (pages.containsKey(resourceName)) {
-		        response.setStatus(HTTPResponseStatus.S200);
-		        response.setContent(pages.get(resourceName));
-		    } else {
-		        response.setStatus(HTTPResponseStatus.S404);
-		        response.setContent("404 Not Found");
-		    }
-			*/
-		    // Escribir la respuesta HTTP
-		    response.print(writer);
-	
-	} catch (IOException | HTTPParseException e) {
-	    e.printStackTrace();
-	    // Responder con un error interno en caso de excepción
-	    try (PrintWriter writer = new PrintWriter(socket.getOutputStream(), true)) {
-	        HTTPResponse errorResponse = new HTTPResponse();
-	        errorResponse.setStatus(HTTPResponseStatus.S500);
-	        errorResponse.setContent("500 Internal Server Error");
-	        errorResponse.print(writer);
-	    } catch (IOException ioException) {
-	        ioException.printStackTrace();
-	    }
-	        }
-	    }
 
-  private void initializeDefaultPages() {
-      // Inicializar algunas páginas predeterminadas
-	  pages.put("/", "<html><body><h1>Hybrid Server</h1><p>David Álvarez Iglesias\nAntonio Caride Pernas</p></body></html>");
-      pages.put("/about", "<html><body><h1>Acerca de</h1><p>Este es un servidor HTTP simple construido en Java.</p></body></html>");
-  }
-    }
-    
-    private String readRequest(Socket clientSocket) throws IOException {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-        
-        // Leer la primera línea de la solicitud (la línea de solicitud)
-        String requestLine = reader.readLine();
-        if (requestLine == null || requestLine.isEmpty()) {
-            throw new IOException("Empty request line");
-        }
-        requestBuilder.append(requestLine).append("\r\n");
+            switch(request.getMethod()) {
+                case GET:
+                    controller.handleGetRequest(request, response);
+                    break;
+                case POST:
+                    controller.handlePostRequest(request, response);
+                    break;
+                case DELETE:
+                    //controller.handleDeleteRequest(request, response);
+                    break;
+                default:
+                    response.setStatus(HTTPResponseStatus.S405); // Método no permitido
+                    response.setContent("405 Method Not Allowed");
+                    break;
+            }
 
-        // Leer los encabezados de la solicitud
-        String headerLine;
-        while (!(headerLine = reader.readLine()).isEmpty()) {
-            requestBuilder.append(headerLine).append("\r\n");
-        }
-
-        // Retornar la solicitud completa
-        return requestBuilder.toString();
+	        response.print(writer);
+	        writer.flush();
+		    
+    	} catch (SocketException e) {
+            System.out.println("SocketException: " + e.getMessage());
+            e.printStackTrace(); 
+        } catch (IOException e) {
+            System.out.println("IOException: " + e.getMessage());
+            e.printStackTrace(); 
+        } catch (HTTPParseException e) {
+        	System.out.println("HTTPParseException: " + e.getMessage());
+			e.printStackTrace();
+		} 
     }
 }

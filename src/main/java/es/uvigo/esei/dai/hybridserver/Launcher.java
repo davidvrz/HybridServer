@@ -22,20 +22,20 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Launcher {
-  public static void main(String[] args) {
-    HybridServer server = new HybridServer();
+	public static void main(String[] args) {
+		HybridServer server = new HybridServer();
 
-    server.start();
-    System.out.println("Servidor iniciado en el puerto " + server.getPort());
+		server.start();
+		System.out.println("Servidor iniciado en el puerto " + server.getPort());
 
-    try {
-      System.in.read(); // Esperar entrada del usuario
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
+		try {
+			System.in.read(); // Esperar entrada del usuario
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 
-    server.close();
-    System.out.println("Servidor detenido.");
-  }
+		server.close();
+		System.out.println("Servidor detenido.");
+	}
 }
 

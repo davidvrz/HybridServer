@@ -29,16 +29,13 @@ public class HTTPResponse {
 	private HTTPResponseStatus status;
     private String version;
     private String content;
-    private Map<String, String> parameters;
+    private Map<String, String> headers;
     
     public HTTPResponse() {
-        this.status = HTTPResponseStatus.S200; // Estado por defecto
-        this.version = "HTTP/1.1"; // Versión por defecto
-        this.content = ""; // Contenido por defecto
-        this.parameters = new HashMap<>(); // Inicializar parámetros
-	}
+    	this.headers = new HashMap<>();
+        this.version = HTTPHeaders.HTTP_1_1.getHeader(); 
+    }
 	
-    
     public HTTPResponseStatus getStatus() {
     	return this.status; 
   }
@@ -61,8 +58,10 @@ public class HTTPResponse {
 
 	public void setContent(String content) {
 		this.content = content;
+        headers.put(HTTPHeaders.CONTENT_LENGTH.getHeader(), String.valueOf(content.length()));
+        headers.put(HTTPHeaders.CONTENT_TYPE.getHeader(), "text/html; charset=UTF-8");
 	}
-
+/*
 	public Map<String, String> getParameters() {
 		return this.parameters;
 	}
@@ -86,21 +85,18 @@ public class HTTPResponse {
 	public List<String> listParameters() {
 		return new ArrayList<>(this.parameters.keySet());
 	}
-	
+*/
 	public void print(Writer writer) throws IOException {
-        // Escribir la línea de estado
-        writer.write(this.version + " " + this.status.getCode() + " " + this.status.getStatus() + "\r\n");
+		writer.write(version + " " + status.getCode() + " " + status.getStatus() + "\r\n");
 
-        // Escribir los parámetros de respuesta
-        for (Map.Entry<String, String> entry : this.parameters.entrySet()) {
+        for (Map.Entry<String, String> entry : this.headers.entrySet()) {
             writer.write(entry.getKey() + ": " + entry.getValue() + "\r\n");
         }
-
-        // Escribir una línea en blanco para separar los encabezados del contenido
         writer.write("\r\n");
 
-        // Escribir el contenido de la respuesta
-        writer.write(this.content);
+        if (content != null) {
+            writer.write(content);
+        }
     }
 	
 	@Override

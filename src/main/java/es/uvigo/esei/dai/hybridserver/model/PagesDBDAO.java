@@ -5,78 +5,83 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import connection.DatabaseConnection;
+
 public class PagesDBDAO {
-	public void addPage(Page page) throws SQLException {
-        String query = "INSERT INTO pages (uuid, content, created_date, last_modified_date) VALUES (?, ?, ?, ?)";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
-
-            stmt.setString(1, page.getUuid().toString());
-            stmt.setString(2, page.getContent());
-            stmt.setTimestamp(3, Timestamp.valueOf(page.getCreatedDate()));
-            stmt.setTimestamp(4, Timestamp.valueOf(page.getLastModifiedDate()));
-            stmt.executeUpdate();
+	
+    public String savePage(String htmlContent) {
+        String insertSQL = "INSERT INTO Pages (uuid, content) VALUES (?, ?)";
+        String uuid = null;
+        
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(insertSQL)) {
+             
+            uuid = java.util.UUID.randomUUID().toString(); 
+            statement.setString(1, uuid); 
+            statement.setString(2, htmlContent); 
+            
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace(); 
         }
+        
+        return uuid;
     }
 
-    // Método para obtener una página por su UUID
-    public Page getPageById(UUID uuid) throws SQLException {
-        String query = "SELECT * FROM pages WHERE uuid = ?";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
+    public boolean hasPages() {
+        String query = "SELECT COUNT(*) FROM Pages"; 
 
-            stmt.setString(1, uuid.toString());
-            ResultSet rs = stmt.executeQuery();
-
-            if (rs.next()) {
-                return new Page(
-                    UUID.fromString(rs.getString("uuid")),
-                    rs.getString("content")
-                );
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query);
+             ResultSet resultSet = statement.executeQuery()) {
+             
+            if (resultSet.next()) {
+                return resultSet.getInt(1) > 0; 
             }
-            return null; // No se encontró la página
+        } catch (SQLException e) {
+            e.printStackTrace(); 
         }
+        
+        return false; 
     }
 
-    // Método para obtener todas las páginas
-    public List<Page> getAllPages() throws SQLException {
-        List<Page> pages = new ArrayList<>();
-        String query = "SELECT * FROM pages";
-        try (Connection conn = DatabaseConnection.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(query)) {
+    public String getPageByUUID(String uuid) {
+        String query = "SELECT content FROM Pages WHERE uuid = ?";
+        String content = null;
 
-            while (rs.next()) {
-                pages.add(new Page(
-                    UUID.fromString(rs.getString("uuid")),
-                    rs.getString("content")
-                ));
+        try (Connection connection = DatabaseConnection.getConnection(); 
+             PreparedStatement statement = connection.prepareStatement(query)) {
+             
+            statement.setString(1, uuid); 
+            ResultSet resultSet = statement.executeQuery();
+
+            if (resultSet.next()) {
+                content = resultSet.getString("content"); 
             }
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
+
+        return content; 
+    }
+
+    public List<String> listPages() {
+        List<String> pages = new ArrayList<>();
+        String query = "SELECT uuid, content FROM Pages";
+
+        try (Connection connection = DatabaseConnection.getConnection(); 
+             PreparedStatement statement = connection.prepareStatement(query);
+             ResultSet resultSet = statement.executeQuery()) {
+             
+            while (resultSet.next()) {
+                String uuid = resultSet.getString("uuid"); 
+                String content = resultSet.getString("content");
+                pages.add(uuid); // Tambien se puede añadir otros campos
+            }
+        } catch (SQLException e) {
+            e.printStackTrace(); 
+        }
+
         return pages;
-    }
-
-    // Método para actualizar el contenido de una página existente
-    public void updatePage(Page page) throws SQLException {
-        String query = "UPDATE pages SET content = ?, last_modified_date = ? WHERE uuid = ?";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
-
-            stmt.setString(1, page.getContent());
-            stmt.setTimestamp(2, Timestamp.valueOf(page.getLastModifiedDate()));
-            stmt.setString(3, page.getUuid().toString());
-            stmt.executeUpdate();
-        }
-    }
-
-    // Método para eliminar una página por su UUID
-    public void deletePage(UUID uuid) throws SQLException {
-        String query = "DELETE FROM pages WHERE uuid = ?";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
-
-            stmt.setString(1, uuid.toString());
-            stmt.executeUpdate();
-        }
     }
 }
