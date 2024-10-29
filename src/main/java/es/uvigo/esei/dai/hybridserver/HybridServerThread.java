@@ -40,10 +40,10 @@ public class HybridServerThread implements Runnable {
                     controller.handlePostRequest(request, response);
                     break;
                 case DELETE:
-                    //controller.handleDeleteRequest(request, response);
+                    controller.handleDeleteRequest(request, response);
                     break;
                 default:
-                    response.setStatus(HTTPResponseStatus.S405); // Método no permitido
+                    response.setStatus(HTTPResponseStatus.S405);
                     response.setContent("405 Method Not Allowed");
                     break;
             }

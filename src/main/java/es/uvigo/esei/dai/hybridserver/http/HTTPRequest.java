@@ -20,6 +20,7 @@ package es.uvigo.esei.dai.hybridserver.http;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
+import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -79,12 +80,21 @@ public class HTTPRequest {
         }
     }
 
-    private void readContent(BufferedReader bufferedReader) throws IOException {
-        int contentLength = Integer.parseInt(headers.get("Content-Length"));
-        char[] contentBuffer = new char[contentLength];
-        bufferedReader.read(contentBuffer, 0, contentLength);
-        this.content = new String(contentBuffer);
-    }
+	private void readContent(BufferedReader bufferedReader) throws IOException {
+	    int contentLength = Integer.parseInt(headers.get("Content-Length"));
+	    char[] contentBuffer = new char[contentLength];
+	    bufferedReader.read(contentBuffer, 0, contentLength);
+	    String body = new String(contentBuffer);
+
+	    // Descomponer el cuerpo en parámetros
+	    String[] parts = body.split("&");
+	    for (String part : parts) {
+	        String[] keyValue = part.split("=");
+	        if (keyValue.length == 2 && keyValue[0].equals("html")) {
+	            this.content = URLDecoder.decode(keyValue[1], "UTF-8");
+	        }
+	    }
+	}
 
 	public HTTPRequestMethod getMethod() {
 		return this.method;

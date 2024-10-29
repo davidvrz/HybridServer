@@ -17,6 +17,7 @@
  */
 package es.uvigo.esei.dai.hybridserver;
 
+import es.uvigo.esei.dai.hybridserver.config.JDBCException;
 import es.uvigo.esei.dai.hybridserver.http.HTTPParseException;
 import es.uvigo.esei.dai.hybridserver.http.HTTPRequest;
 import es.uvigo.esei.dai.hybridserver.http.HTTPResponse;
@@ -90,11 +91,16 @@ public class HybridServer implements AutoCloseable {
 
 	public static void initializePages() {
 		PagesDBDAO pagesDBDAO = new PagesDBDAO();
-
-		if (!pagesDBDAO.hasPages()) {
-	        pagesDBDAO.savePage("<html><body><h1>Bienvenida a Hybrid Server</h1><p>Este es el servidor que sirve páginas HTML.</p></body></html>");
-	        pagesDBDAO.savePage("<html><body><h1>Acerca de</h1><p>Este servidor fue creado para servir páginas almacenadas en una base de datos.</p></body></html>");
-		}  
+		
+		try {
+			if (!pagesDBDAO.hasPages()) {
+		        pagesDBDAO.savePage("<html><body><h1>Bienvenida a Hybrid Server</h1><p>Este es el servidor que sirve páginas HTML.</p></body></html>");
+		        pagesDBDAO.savePage("<html><body><h1>Acerca de</h1><p>Este servidor fue creado para servir páginas almacenadas en una base de datos.</p></body></html>");
+			}
+		} catch (JDBCException e) {
+			System.err.println("Error al inicializar las páginas: " + e.getMessage());
+		}
+  
 	}	
   
   
