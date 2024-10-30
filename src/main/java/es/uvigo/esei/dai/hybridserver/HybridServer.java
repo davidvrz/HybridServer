@@ -17,6 +17,7 @@
  */
 package es.uvigo.esei.dai.hybridserver;
 
+import es.uvigo.esei.dai.hybridserver.config.JDBCConnection;
 import es.uvigo.esei.dai.hybridserver.config.JDBCException;
 import es.uvigo.esei.dai.hybridserver.http.HTTPParseException;
 import es.uvigo.esei.dai.hybridserver.http.HTTPRequest;
@@ -33,48 +34,63 @@ import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 
 public class HybridServer implements AutoCloseable {
-	private static final int SERVICE_PORT = 2000;
-	private Thread serverThread;
-	private boolean stop;
-	private Map<String, String> pages; 
-	
-	
-	public HybridServer() {
-		this.pages = new HashMap<>();
-	    initializePages(); 
-	}
-	
-	public HybridServer(Map<String, String> pages) {
-	    this.pages = pages;
-	}
+	private int servicePort;
+    private int maxClients;
+    String dbUrl;
+    String dbUser;
+    String dbPassword;
+    private Thread serverThread;
+    private boolean stop;
+    private ExecutorService threadPool;
+
+    public HybridServer() {
+        this.servicePort = 8888;
+        this.maxClients = 50;
+        dbUrl = "jdbc:mysql://localhost:3306/HybridServer";
+        dbUser = "hybridserver";
+        dbPassword = "hspass";
+        
+        JDBCConnection.initialize(dbUrl, dbUser, dbPassword);
+        initializePages();
+        this.threadPool = Executors.newFixedThreadPool(maxClients);
+    }
 	
 	public HybridServer(Properties properties) {
-		this.pages = new HashMap<>();
-		for (String key : properties.stringPropertyNames()) {
-			this.pages.put(key, properties.getProperty(key));
-		}
+	    this.servicePort = Integer.parseInt(properties.getProperty("port", "8888"));
+        this.maxClients = Integer.parseInt(properties.getProperty("numClients", "50"));
+        String dbUrl = properties.getProperty("db.url", "jdbc:mysql://localhost:3306/HybridServer");
+        String dbUser = properties.getProperty("db.user", "hybridserver");
+        String dbPassword = properties.getProperty("db.password", "hspass");
+        
+        JDBCConnection.initialize(dbUrl, dbUser, dbPassword);
+        initializePages();
+        this.threadPool = Executors.newFixedThreadPool(maxClients);
 
 	}
 	
 	public int getPort() {
-		return SERVICE_PORT;
+		return servicePort;
 	}
 	
 	public void start() {
 		this.serverThread = new Thread() {
 		@Override
 		public void run() {
-			try (final ServerSocket serverSocket = new ServerSocket(SERVICE_PORT)) {
+			try (final ServerSocket serverSocket = new ServerSocket(servicePort)) {
 				while (true) {
 					try {
 						Socket clientSocket = serverSocket.accept();
 						if (stop)
 							break;
 
-						new Thread(new HybridServerThread(clientSocket)).start();
+						threadPool.execute(new HybridServerThread(clientSocket));
+						
 					} catch (IOException e) {
                         e.printStackTrace();
 					}
@@ -83,7 +99,7 @@ public class HybridServer implements AutoCloseable {
 				e.printStackTrace();
 			}
 		}
-    	};
+    };
 
     	this.stop = false;
     	this.serverThread.start();
@@ -108,7 +124,7 @@ public class HybridServer implements AutoCloseable {
   	public void close() {
 	  	this.stop = true;
 
-    	try (Socket socket = new Socket("localhost", SERVICE_PORT)) {
+    	try (Socket socket = new Socket("localhost", servicePort)) {
     	// Esta conexión se hace, simplemente, para "despertar" el hilo servidor
     	} catch (IOException e) {
     		throw new RuntimeException(e);
@@ -120,6 +136,14 @@ public class HybridServer implements AutoCloseable {
     		throw new RuntimeException(e);
     	}
 
-    	this.serverThread = null;
+    	threadPool.shutdownNow();
+
+    	try {
+    	  threadPool.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);
+    	} catch (InterruptedException e) {
+    	  e.printStackTrace();
+    	}
+
   	}
 }
+

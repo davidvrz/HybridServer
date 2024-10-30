@@ -87,13 +87,13 @@ public class PagesDBDAO {
         try (Connection connection = JDBCConnection.getConnection(); 
              PreparedStatement statement = connection.prepareStatement(query);
              ResultSet resultSet = statement.executeQuery()) {
-             
-            while (resultSet.next()) {
+             while (resultSet.next()) {
                 String uuid = resultSet.getString("uuid"); 
                 String content = resultSet.getString("content");
                 pages.add(uuid);
             }
         } catch (SQLException e) {
+        	e.printStackTrace(); 
         	throw new JDBCException("Database error occurred while fetching page.", e); 
         }
 

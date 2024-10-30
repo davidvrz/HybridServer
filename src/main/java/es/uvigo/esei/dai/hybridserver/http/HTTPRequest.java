@@ -28,12 +28,14 @@ public class HTTPRequest {
 	private HTTPRequestMethod method;
 	private String resourceChain;
 	private String httpVersion;
-	private Map<String, String> headers;
 	private String content;
+	private Map<String, String> headers;
+	private Map<String, String> parameters;
 
 	public HTTPRequest(Reader reader) throws IOException, HTTPParseException {
 		BufferedReader bufferedReader = new BufferedReader(reader);
 		this.headers = new HashMap<>();
+		this.parameters = new HashMap<>();
 		  
 		// Leer la primera línea de la solicitud: Método, URI y versión de HTTP
 	    String requestLine = bufferedReader.readLine();
@@ -48,20 +50,22 @@ public class HTTPRequest {
 	      throw new HTTPParseException("Formato de solicitud HTTP inválido.");
 	    }
 	
-	    // Método HTTP
-	    try {
-	    	this.method = HTTPRequestMethod.valueOf(requestParts[0]);
-		} catch (IllegalArgumentException e) {
-		    throw new HTTPParseException("Método HTTP no soportado: " + requestParts[0]);
-		}
-	
-	    // URI o cadena de recursos
+	    if (requestParts[0].isEmpty() || (!requestParts[0].equals(HTTPRequestMethod.values()))) {
+	        throw new HTTPParseException("Méetodo HTTP faltante o no soportado en la solicitud");
+	    }
 	    this.resourceChain = requestParts[1];
 	
-	    // Versión HTTP
+	    if (requestParts[1].isEmpty() || requestParts[1].contains("HTTP/")) {
+	        throw new HTTPParseException("Recurso faltante o mal formado en la solicitud");
+	    }
+	    this.resourceChain = requestParts[1];
+
+	    if (!requestParts[2].startsWith("HTTP/")) {
+	        throw new HTTPParseException("Versión HTTP faltante o incorrecta");
+	    }
 	    this.httpVersion = requestParts[2];
 	
-	    // Leer las cabeceras de la solicitud
+	   
         readHeaders(bufferedReader);
 
         // Leer el contenido (si existe)
@@ -81,19 +85,28 @@ public class HTTPRequest {
     }
 
 	private void readContent(BufferedReader bufferedReader) throws IOException {
-	    int contentLength = Integer.parseInt(headers.get("Content-Length"));
+	    int contentLength = Integer.parseInt(headers.get(HTTPHeaders.CONTENT_LENGTH.getHeader()));
 	    char[] contentBuffer = new char[contentLength];
 	    bufferedReader.read(contentBuffer, 0, contentLength);
 	    String body = new String(contentBuffer);
 
-	    // Descomponer el cuerpo en parámetros
-	    String[] parts = body.split("&");
-	    for (String part : parts) {
-	        String[] keyValue = part.split("=");
-	        if (keyValue.length == 2 && keyValue[0].equals("html")) {
-	            this.content = URLDecoder.decode(keyValue[1], "UTF-8");
-	        }
-	    }
+	    String type = headers.get(HTTPHeaders.CONTENT_TYPE.getHeader());
+        if (type != null && type.equals(MIME.FORM.getMime())) {
+            // Decodificar el cuerpo de la solicitud
+            String decodedBody = URLDecoder.decode(body, "UTF-8");
+
+            // Descomponer el cuerpo en pares clave-valor
+            String[] parts = decodedBody.split("&");
+            for (String part : parts) {
+                String[] keyValue = part.split("=", 2);
+                if (keyValue.length == 2) {
+                    parameters.put(keyValue[0], keyValue[1]); // Guardar cada parámetro en el mapa
+                }
+            }
+        } else {
+            // Si no es URL-encoded, almacenar el contenido directamente
+            this.content = body;
+        }
 	}
 
 	public HTTPRequestMethod getMethod() {
@@ -124,22 +137,27 @@ public class HTTPRequest {
     }
 
 	public Map<String, String> getResourceParameters() {
-		Map<String, String> parameters = new HashMap<>();
+		Map<String, String> resourceParameters = new HashMap<>();
 		if (this.resourceChain.contains("?")) {
 			String[] parts = this.resourceChain.split("\\?");
 			if (parts.length > 1) {
 				String[] paramPairs = parts[1].split("&");
 				for (String pair : paramPairs) {
-					String[] keyValue = pair.split("=");
+					String[] keyValue = pair.split("=", 2);
 					if (keyValue.length == 2) {
+						resourceParameters.put(keyValue[0], keyValue[1]);
 						parameters.put(keyValue[0], keyValue[1]);
 					}
 				}
 			}
 		}
-		return parameters;
+		return resourceParameters;
 	}
 
+    public Map<String, String> getParameters() {
+        return this.parameters;
+    }
+    
 	public String getHttpVersion() {
 		return this.httpVersion;
 	}
@@ -157,7 +175,7 @@ public class HTTPRequest {
 	}
 	
 	public String getParameter(String key) {
-	    return getResourceParameters().get(key);
+	    return getParameters().get(key);
 	}
 
 	@Override

@@ -1,7 +1,5 @@
 package es.uvigo.esei.dai.hybridserver.controller;
 
-import java.sql.SQLException;
-
 import es.uvigo.esei.dai.hybridserver.config.JDBCException;
 import es.uvigo.esei.dai.hybridserver.http.HTTPRequest;
 import es.uvigo.esei.dai.hybridserver.http.HTTPResponse;
@@ -93,7 +91,7 @@ public class ResourceController {
             if (htmlContent != null && !htmlContent.isEmpty()) {
                 String newUUID = pagesDAO.savePage(htmlContent);
                 response.setStatus(HTTPResponseStatus.S200);
-                response.setContent("<html><body><p>Nueva página añadida con UUID: <a href='http://localhost:2000/html?uuid=" 
+                response.setContent("<html><body><p>Nueva página añadida con UUID: <a href='http://localhost:8888/html?uuid=" 
                                     + newUUID + "'>" + newUUID + "</a></p></body></html>");
             } else {
                 response.setStatus(HTTPResponseStatus.S400);
@@ -146,7 +144,7 @@ public class ResourceController {
         StringBuilder content = new StringBuilder("<html><body><h1>Listado de Páginas</h1><ul>");
 
         for (String pageUUID : pagesDAO.listPages()) {
-            content.append("<li>UUID: <a href='http://localhost:2000/html?uuid=")
+            content.append("<li>UUID: <a href='http://localhost:8888/html?uuid=")
                    .append(pageUUID)	
                    .append("'>").append(pageUUID).append("</a></li>");
         }

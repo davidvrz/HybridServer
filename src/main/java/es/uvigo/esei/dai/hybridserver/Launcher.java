@@ -17,19 +17,33 @@
  */
 package es.uvigo.esei.dai.hybridserver;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
 public class Launcher {
 	public static void main(String[] args) {
-		HybridServer server = new HybridServer();
+		HybridServer server;
+		Properties properties = new Properties();
+		if (args.length == 1) {
+	        try (FileInputStream input = new FileInputStream(args[0])) {
+	            properties.load(input); 
+	            server = new HybridServer(properties); 
+	        } catch (IOException e) {
+	            System.err.println("Error al cargar el archivo de configuración: " + e.getMessage());
+	            server = new HybridServer(); 
+	        }
+	    } else {
+	        server = new HybridServer();
+	    }
 
 		server.start();
 		System.out.println("Servidor iniciado en el puerto " + server.getPort());
 
 		try {
-			System.in.read(); // Esperar entrada del usuario
+			System.in.read(); 
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

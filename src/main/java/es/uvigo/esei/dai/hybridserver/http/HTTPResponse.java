@@ -30,9 +30,11 @@ public class HTTPResponse {
     private String version;
     private String content;
     private Map<String, String> headers;
+    private Map<String, String> parameters;
     
     public HTTPResponse() {
     	this.headers = new HashMap<>();
+    	this.parameters = new HashMap<>();
         this.version = HTTPHeaders.HTTP_1_1.getHeader(); 
     }
 	
@@ -59,9 +61,9 @@ public class HTTPResponse {
 	public void setContent(String content) {
 		this.content = content;
         headers.put(HTTPHeaders.CONTENT_LENGTH.getHeader(), String.valueOf(content.length()));
-        headers.put(HTTPHeaders.CONTENT_TYPE.getHeader(), "text/html; charset=UTF-8");
+        headers.put(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime() + "; charset=UTF-8");
 	}
-/*
+
 	public Map<String, String> getParameters() {
 		return this.parameters;
 	}
@@ -85,7 +87,7 @@ public class HTTPResponse {
 	public List<String> listParameters() {
 		return new ArrayList<>(this.parameters.keySet());
 	}
-*/
+
 	public void print(Writer writer) throws IOException {
 		writer.write(version + " " + status.getCode() + " " + status.getStatus() + "\r\n");
 

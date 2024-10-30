@@ -5,11 +5,19 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class JDBCConnection {
-    private static final String URL = "jdbc:mysql://localhost:3306/HybridServer";
-    private static final String USER = "hybridserver";
-    private static final String PASSWORD = "hspass";
+	private static String url;
+    private static String user;
+    private static String password;
 
+    // Método para inicializar la conexión con parámetros
+    public static void initialize(String dbUrl, String dbUser, String dbPassword) {
+        url = dbUrl;
+        user = dbUser;
+        password = dbPassword;
+    }
+
+    // Método para obtener la conexión
     public static Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(URL, USER, PASSWORD);
+    	return DriverManager.getConnection(url, user, password);
     }
 }
