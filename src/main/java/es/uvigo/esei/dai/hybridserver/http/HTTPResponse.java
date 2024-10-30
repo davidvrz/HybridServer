@@ -22,6 +22,7 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -29,13 +30,12 @@ public class HTTPResponse {
 	private HTTPResponseStatus status;
     private String version;
     private String content;
-    private Map<String, String> headers;
-    private Map<String, String> parameters;
+    private LinkedHashMap<String, String> parameters;
     
     public HTTPResponse() {
-    	this.headers = new HashMap<>();
-    	this.parameters = new HashMap<>();
+    	this.parameters = new LinkedHashMap<>();
         this.version = HTTPHeaders.HTTP_1_1.getHeader(); 
+        this.content = "";
     }
 	
     public HTTPResponseStatus getStatus() {
@@ -60,11 +60,11 @@ public class HTTPResponse {
 
 	public void setContent(String content) {
 		this.content = content;
-        headers.put(HTTPHeaders.CONTENT_LENGTH.getHeader(), String.valueOf(content.length()));
-        headers.put(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime() + "; charset=UTF-8");
+        parameters.put(HTTPHeaders.CONTENT_LENGTH.getHeader(), String.valueOf(content.length()));
+        parameters.put(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime() + "; charset=UTF-8");
 	}
 
-	public Map<String, String> getParameters() {
+	public LinkedHashMap<String, String> getParameters() {
 		return this.parameters;
 	}
 
@@ -91,7 +91,7 @@ public class HTTPResponse {
 	public void print(Writer writer) throws IOException {
 		writer.write(version + " " + status.getCode() + " " + status.getStatus() + "\r\n");
 
-        for (Map.Entry<String, String> entry : this.headers.entrySet()) {
+        for (Map.Entry<String, String> entry : this.parameters.entrySet()) {
             writer.write(entry.getKey() + ": " + entry.getValue() + "\r\n");
         }
         writer.write("\r\n");

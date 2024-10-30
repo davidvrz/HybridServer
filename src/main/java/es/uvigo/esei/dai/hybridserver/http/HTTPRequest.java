@@ -22,22 +22,25 @@ import java.io.IOException;
 import java.io.Reader;
 import java.net.URLDecoder;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class HTTPRequest {
 	private HTTPRequestMethod method;
-	private String resourceChain;
+	private String resourceChain, resourceName;
+	private String[] resourcePath;
 	private String httpVersion;
 	private String content;
-	private Map<String, String> headers;
-	private Map<String, String> parameters;
+	private int contentLength;
+	private LinkedHashMap<String, String> headers;
+	private LinkedHashMap<String, String> parameters;
 
 	public HTTPRequest(Reader reader) throws IOException, HTTPParseException {
 		BufferedReader bufferedReader = new BufferedReader(reader);
-		this.headers = new HashMap<>();
-		this.parameters = new HashMap<>();
+		this.headers = new LinkedHashMap<>();
+		this.parameters = new LinkedHashMap<>();
 		  
-		// Leer la primera línea de la solicitud: Método, URI y versión de HTTP
+		// METHOD, RESOURCECHAIN Y HTTPVERSION
 	    String requestLine = bufferedReader.readLine();
 	    System.out.println("requestLine: " + requestLine);
 	    if (requestLine == null || requestLine.isEmpty()) {
@@ -66,46 +69,69 @@ public class HTTPRequest {
 	    this.httpVersion = requestParts[2];
 	
 	   
-        readHeaders(bufferedReader);
-
-        // Leer el contenido (si existe)
-        if (headers.containsKey("Content-Length")) {
-            readContent(bufferedReader);
-        }
-    }
-
-	private void readHeaders(BufferedReader bufferedReader) throws IOException {
-        String line;
-        while ((line = bufferedReader.readLine()) != null && !line.isEmpty()) {
-            String[] headerParts = line.split(": ");
-            if (headerParts.length == 2) {
-                this.headers.put(headerParts[0], headerParts[1]);
+	    // RESOURCEPATH, RESOURCENAME Y RESOURCEPARAMETERS
+	    if (this.resourceChain.contains("?")) {
+	    	String[] resourceChainSplit = this.resourceChain.split("\\?");
+	    	this.resourceName = resourceChainSplit[0].substring(1);
+	    	this.resourcePath = resourceChainSplit[0].substring(1).split("/");
+	    	
+	    	if (resourceChainSplit.length > 1) {
+				String[] paramPairs = resourceChainSplit[1].split("&");
+				for (String pair : paramPairs) {
+					if (!pair.contains("="))
+						throw new HTTPParseException("Invalid parameters");
+					
+					String[] keyValue = pair.split("=", 2);
+					if (keyValue.length == 2) {
+						parameters.put(keyValue[0], keyValue[1]);	
+					}
+				}
+	    	}
+	    } else {
+			if (this.getResourceChain().equals("/")) {
+				this.resourcePath = new String[0];
+				this.resourceName = "";
+			} else {
+				this.resourcePath = this.resourceChain.substring(1).split("/");				
+				this.resourceName = this.resourceChain.substring(1);
+				
+			}
+			
+		}
+	    
+	    // HEADERS
+	    while ((requestLine = bufferedReader.readLine()) != null && requestLine.contains(": ")) {
+            String[] headerPairs = requestLine.split(": ");
+            if (headerPairs.length == 2) {
+                this.headers.put(headerPairs[0], headerPairs[1]);
             }
         }
-    }
+	    if (requestLine != null && !requestLine.isEmpty()) {
+			throw new HTTPParseException("Invalid header" + requestLine);
+		}
+	    
+	    // CONTENT
+	    
+        if (headers.containsKey("Content-Length")) {
+        	this.contentLength = Integer.parseInt(headers.get(HTTPHeaders.CONTENT_LENGTH.getHeader()));
+    	    char[] contentBuffer = new char[this.contentLength];
+    	    bufferedReader.read(contentBuffer, 0, this.contentLength);
+    	    this.content = new String(contentBuffer);
 
-	private void readContent(BufferedReader bufferedReader) throws IOException {
-	    int contentLength = Integer.parseInt(headers.get(HTTPHeaders.CONTENT_LENGTH.getHeader()));
-	    char[] contentBuffer = new char[contentLength];
-	    bufferedReader.read(contentBuffer, 0, contentLength);
-	    String body = new String(contentBuffer);
+    	    String type = headers.get(HTTPHeaders.CONTENT_TYPE.getHeader());
+            if (type != null && type.equals(MIME.FORM.getMime())) {
+                this.content = URLDecoder.decode(this.content, "UTF-8");
 
-	    String type = headers.get(HTTPHeaders.CONTENT_TYPE.getHeader());
-        if (type != null && type.equals(MIME.FORM.getMime())) {
-            // Decodificar el cuerpo de la solicitud
-            String decodedBody = URLDecoder.decode(body, "UTF-8");
-
-            // Descomponer el cuerpo en pares clave-valor
-            String[] parts = decodedBody.split("&");
-            for (String part : parts) {
-                String[] keyValue = part.split("=", 2);
-                if (keyValue.length == 2) {
-                    parameters.put(keyValue[0], keyValue[1]); // Guardar cada parámetro en el mapa
+                String[] parts = this.content.split("&");
+                for (String part : parts) {
+                	if (!part.contains("="))
+    					throw new HTTPParseException("Invalid parameters");
+                    String[] keyValue = part.split("=", 2);
+                    if (keyValue.length == 2) {
+                        this.parameters.put(keyValue[0], keyValue[1]); 
+                    }
                 }
             }
-        } else {
-            // Si no es URL-encoded, almacenar el contenido directamente
-            this.content = body;
         }
 	}
 
@@ -118,45 +144,16 @@ public class HTTPRequest {
     }
 	  
 	public String[] getResourcePath() {
-		return this.resourceChain.split("/");
+		return this.resourcePath;
 	}
 
     public String getResourceName() {
-        String[] pathParts = getResourcePath();
-        if (pathParts.length > 1) {
-        	String resource = pathParts[1];
-            
-            if (resource.contains("?")) {
-                resource = resource.split("\\?")[0];
-            }
-
-            System.out.println("Recurso: " + resource);
-            return resource;
-        }
-        return ""; 
+        return this.resourceName;
     }
 
 	public Map<String, String> getResourceParameters() {
-		Map<String, String> resourceParameters = new HashMap<>();
-		if (this.resourceChain.contains("?")) {
-			String[] parts = this.resourceChain.split("\\?");
-			if (parts.length > 1) {
-				String[] paramPairs = parts[1].split("&");
-				for (String pair : paramPairs) {
-					String[] keyValue = pair.split("=", 2);
-					if (keyValue.length == 2) {
-						resourceParameters.put(keyValue[0], keyValue[1]);
-						parameters.put(keyValue[0], keyValue[1]);
-					}
-				}
-			}
-		}
-		return resourceParameters;
+		return this.parameters;
 	}
-
-    public Map<String, String> getParameters() {
-        return this.parameters;
-    }
     
 	public String getHttpVersion() {
 		return this.httpVersion;
@@ -175,7 +172,7 @@ public class HTTPRequest {
 	}
 	
 	public String getParameter(String key) {
-	    return getParameters().get(key);
+	    return getResourceParameters().get(key);
 	}
 
 	@Override
