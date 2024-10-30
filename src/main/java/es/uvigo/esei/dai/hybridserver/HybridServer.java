@@ -52,26 +52,29 @@ public class HybridServer implements AutoCloseable {
     public HybridServer() {
         this.servicePort = 8888;
         this.maxClients = 50;
-        dbUrl = "jdbc:mysql://localhost:3306/HybridServer";
-        dbUser = "hybridserver";
-        dbPassword = "hspass";
+        dbUrl = "jdbc:mysql://localhost:3306/hstestdb";
+        dbUser = "hsdb";
+        dbPassword = "hsdbpass";
         
         JDBCConnection.initialize(dbUrl, dbUser, dbPassword);
-        initializePages();
-        this.threadPool = Executors.newFixedThreadPool(maxClients);
+        //initializePages();
     }
+	
+	public HybridServer(Map<String, String> pages) {
+		this.servicePort = 8888;
+        this.maxClients = 50;
+        //initializePages();
+	}
 	
 	public HybridServer(Properties properties) {
 	    this.servicePort = Integer.parseInt(properties.getProperty("port", "8888"));
         this.maxClients = Integer.parseInt(properties.getProperty("numClients", "50"));
-        String dbUrl = properties.getProperty("db.url", "jdbc:mysql://localhost:3306/HybridServer");
-        String dbUser = properties.getProperty("db.user", "hybridserver");
-        String dbPassword = properties.getProperty("db.password", "hspass");
+        String dbUrl = properties.getProperty("db.url", "jdbc:mysql://localhost:3306/hstestdb");
+        String dbUser = properties.getProperty("db.user", "hsdb");
+        String dbPassword = properties.getProperty("db.password", "hsdbpass");
         
         JDBCConnection.initialize(dbUrl, dbUser, dbPassword);
-        initializePages();
-        this.threadPool = Executors.newFixedThreadPool(maxClients);
-
+        //initializePages();
 	}
 	
 	public int getPort() {
@@ -83,6 +86,7 @@ public class HybridServer implements AutoCloseable {
 		@Override
 		public void run() {
 			try (final ServerSocket serverSocket = new ServerSocket(servicePort)) {
+				threadPool = Executors.newFixedThreadPool(maxClients);
 				while (true) {
 					try {
 						Socket clientSocket = serverSocket.accept();

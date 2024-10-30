@@ -1,9 +1,11 @@
 package es.uvigo.esei.dai.hybridserver.controller;
 
 import es.uvigo.esei.dai.hybridserver.config.JDBCException;
+import es.uvigo.esei.dai.hybridserver.http.HTTPHeaders;
 import es.uvigo.esei.dai.hybridserver.http.HTTPRequest;
 import es.uvigo.esei.dai.hybridserver.http.HTTPResponse;
 import es.uvigo.esei.dai.hybridserver.http.HTTPResponseStatus;
+import es.uvigo.esei.dai.hybridserver.http.MIME;
 import es.uvigo.esei.dai.hybridserver.model.PagesDBDAO;
 
 
@@ -17,7 +19,7 @@ public class ResourceController {
 
     public void handleGetRequest(HTTPRequest request, HTTPResponse response) {
         String resource = request.getResourceName();
-        String uuid = request.getParameter("uuid");
+        String uuid = request.getResourceParameters().get("uuid");
 
         switch (resource) {
             case "html":
@@ -33,22 +35,17 @@ public class ResourceController {
     }
 
     public void handlePostRequest(HTTPRequest request, HTTPResponse response) {
-        String resource = request.getResourceName();
-
-        switch (resource) {
-            case "html":
-                handleHtmlPost(request, response);
-                break;
-            default:
-                handleNotFound(response);
-                break;
-        }
+    	if (request.getResourceParameters().containsKey("html")) {
+    		 handleHtmlPost(request, response);
+    	} else {
+    		handleNotFound(response);
+    	}
     }
     
     public void handleDeleteRequest(HTTPRequest request,HTTPResponse response){
     	System.out.println("Handling DELETE request");
         String resource = request.getResourceName();
-        String uuid = request.getParameter("uuid");
+        String uuid = request.getResourceParameters().get("uuid");
         
         switch (resource) {
             case "html":
@@ -66,6 +63,7 @@ public class ResourceController {
                 String pageContent = pagesDAO.getPageByUUID(uuid);
                 if (pageContent != null) { 
                     response.setStatus(HTTPResponseStatus.S200);
+                    response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime() + "; charset=UTF-8");
                     response.setContent(pageContent);
                 } else {
                     response.setStatus(HTTPResponseStatus.S404);
@@ -73,6 +71,7 @@ public class ResourceController {
                 }
             } else {
                 response.setStatus(HTTPResponseStatus.S200);
+                response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime() + "; charset=UTF-8");
                 response.setContent(generateHtmlPageHome());
             }
         } catch (JDBCException e) {
@@ -86,13 +85,13 @@ public class ResourceController {
 
     private void handleHtmlPost(HTTPRequest request, HTTPResponse response) {
         try {
-            String htmlContent = request.getContent();
+            String htmlContent = request.getResourceParameters().get("html");
             
             if (htmlContent != null && !htmlContent.isEmpty()) {
                 String newUUID = pagesDAO.savePage(htmlContent);
+                StringBuilder content = new StringBuilder("<!DOCTYPE html>" + "<html lang='es'>" + "<head>" + "  <meta charset='utf-8'/>" + "  <title>Hybrid Server</title>" + "</head>" + "<body>" + "<h1>Hybrid Server</h1>" + "<p>Nueva página añadida con UUID: <a href='http://localhost:8888/html?uuid=" + newUUID + "'>" + newUUID + "</a>" + "</p>" + "</body>" + "</html>");
                 response.setStatus(HTTPResponseStatus.S200);
-                response.setContent("<html><body><p>Nueva página añadida con UUID: <a href='http://localhost:8888/html?uuid=" 
-                                    + newUUID + "'>" + newUUID + "</a></p></body></html>");
+                response.setContent(content.toString());
             } else {
                 response.setStatus(HTTPResponseStatus.S400);
                 response.setContent("400 Bad Request - HTML content is missing");
@@ -111,8 +110,9 @@ public class ResourceController {
         try {
             if (uuid != null) {
                 pagesDAO.deletePage(uuid);
+                StringBuilder content = new StringBuilder("<!DOCTYPE html>" + "<html lang='es'>" + "<head>" + "  <meta charset='utf-8'/>" + "  <title>Hybrid Server</title>" + "</head>" + "<body>" + "<h1>Hybrid Server</h1>" + "<p>Página con UUID: " + uuid + " eliminada exitosamente.</p>" + "</body>" + "</html>");
                 response.setStatus(HTTPResponseStatus.S200);
-                response.setContent("<html><body><p>Página con UUID: " + uuid + " eliminada exitosamente.</p></body></html>");
+                response.setContent(content.toString());
             } else {
                 response.setStatus(HTTPResponseStatus.S400);
                 response.setContent("400 Bad Request - UUID is missing");
@@ -128,34 +128,23 @@ public class ResourceController {
 
 
     private void handleWelcomePage(HTTPResponse response) {
+    	StringBuilder content = new StringBuilder("<!DOCTYPE html>" + "<html lang='es'>" + "<head>" + "  <meta charset='utf-8'/>" + "  <title>Hybrid Server</title>" + "</head>" + "<body>" + "<h1>Hybrid Server</h1>" + "<p>Autores:david Álvarez Iglesias, Antonio Caride Pernas.</p>" + "</body>" + "</html>");
         response.setStatus(HTTPResponseStatus.S200);
-        response.setContent("<html><body>"
-                + "<h1>Bienvenido a Hybrid Server</h1>"
-                + "<h2>Autores:</h2>"
-                + "<ul>"
-                + "<li>David Álvarez Iglesias</li>"
-                + "<li>Antonio Caride Pernas</li>"
-                + "</ul>"
-                + "<p><a href='/html'>Ver listado de páginas</a></p>"
-                + "</body></html>");
+        response.setContent(content.toString());
     }
     
     private String generateHtmlPageHome() {
-        StringBuilder content = new StringBuilder("<html><body><h1>Listado de Páginas</h1><ul>");
+        StringBuilder content = new StringBuilder("<!DOCTYPE html>" + "<html lang='es'>" + "<head>" + "  <meta charset='utf-8'/>" + "  <title>Hybrid Server</title>" + "</head>" + "<body>" + "<h1>Hybrid Server</h1>" + "<ul>");
 
         for (String pageUUID : pagesDAO.listPages()) {
-            content.append("<li>UUID: <a href='http://localhost:8888/html?uuid=")
-                   .append(pageUUID)	
-                   .append("'>").append(pageUUID).append("</a></li>");
+            content.append("<li>UUID: <a href='http://localhost:8888/html?uuid=" + pageUUID + "'>" + pageUUID + "</a></li>");
         }
+        
         content.append("</ul>");
 
-        content.append("<h2>Añadir nueva página</h2>")
-               .append("<form action='/html' method='POST'>")
-               .append("<textarea name='html'></textarea>")
-               .append("<button type='submit'>Submit</button>")
-               .append("</form>")
-               .append("</body></html>");
+        content.append("<h2>Añadir nueva página</h2>" + "<form action='/html' method='POST'>" + "<textarea name='html'></textarea>" + "<button type='submit'>Submit</button>" + "</form>" + "</body></html>");
+        
+        content.append("</body>" + "</html>");
         
         return content.toString();
     }

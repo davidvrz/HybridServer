@@ -60,8 +60,8 @@ public class HTTPResponse {
 
 	public void setContent(String content) {
 		this.content = content;
-        parameters.put(HTTPHeaders.CONTENT_LENGTH.getHeader(), String.valueOf(content.length()));
-        parameters.put(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime() + "; charset=UTF-8");
+        //parameters.put(HTTPHeaders.CONTENT_LENGTH.getHeader(), String.valueOf(content.length()));
+        //parameters.put(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime() + "; charset=UTF-8");
 	}
 
 	public LinkedHashMap<String, String> getParameters() {
@@ -97,6 +97,9 @@ public class HTTPResponse {
         writer.write("\r\n");
 
         if (content != null) {
+        	writer.write(HTTPHeaders.CONTENT_LENGTH.getHeader() + ": ");
+            writer.write(content.length());
+            writer.write("\r\n\r\n");
             writer.write(content);
         }
     }

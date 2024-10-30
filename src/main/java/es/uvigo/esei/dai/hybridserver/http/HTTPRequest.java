@@ -53,10 +53,10 @@ public class HTTPRequest {
 	      throw new HTTPParseException("Formato de solicitud HTTP inválido.");
 	    }
 	
-	    if (requestParts[0].isEmpty() || (!requestParts[0].equals(HTTPRequestMethod.values()))) {
-	        throw new HTTPParseException("Méetodo HTTP faltante o no soportado en la solicitud");
+	    if (requestParts[0].isEmpty() /*|| (!requestParts[0].equals(HTTPRequestMethod.values()))*/) {
+	        throw new HTTPParseException("Método HTTP faltante o no soportado en la solicitud");
 	    }
-	    this.resourceChain = requestParts[1];
+	    this.method = requestParts[0];
 	
 	    if (requestParts[1].isEmpty() || requestParts[1].contains("HTTP/")) {
 	        throw new HTTPParseException("Recurso faltante o mal formado en la solicitud");
@@ -169,10 +169,6 @@ public class HTTPRequest {
 
 	public int getContentLength() {
 		return this.content != null ? this.content.length() : 0;
-	}
-	
-	public String getParameter(String key) {
-	    return getResourceParameters().get(key);
 	}
 
 	@Override
