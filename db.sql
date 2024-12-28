@@ -14,7 +14,7 @@ CREATE TABLE HTML  (
 CREATE USER 'hsdb '@'localhost' IDENTIFIED BY 'hsdbpass';
 
 -- Conceder permisos al usuario para acceder a la base de datos
-GRANT ALL PRIVILEGES ON HybridServerDB.* TO 'hsdb'@'localhost';
+GRANT ALL PRIVILEGES ON hstestdb.* TO 'hsdb'@'localhost';
 
 -- Aplicar los cambios
 FLUSH PRIVILEGES;

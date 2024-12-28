@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,8 +59,7 @@ public class HTTPResponse {
 
 	public void setContent(String content) {
 		this.content = content;
-        //parameters.put(HTTPHeaders.CONTENT_LENGTH.getHeader(), String.valueOf(content.length()));
-        //parameters.put(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime() + "; charset=UTF-8");
+        parameters.put(HTTPHeaders.CONTENT_LENGTH.getHeader(), String.valueOf(content.length()));
 	}
 
 	public LinkedHashMap<String, String> getParameters() {
@@ -92,14 +90,12 @@ public class HTTPResponse {
 		writer.write(version + " " + status.getCode() + " " + status.getStatus() + "\r\n");
 
         for (Map.Entry<String, String> entry : this.parameters.entrySet()) {
+        	System.out.println(entry.getKey() + ": " + entry.getValue());
             writer.write(entry.getKey() + ": " + entry.getValue() + "\r\n");
         }
         writer.write("\r\n");
 
-        if (content != null) {
-        	writer.write(HTTPHeaders.CONTENT_LENGTH.getHeader() + ": ");
-            writer.write(content.length());
-            writer.write("\r\n\r\n");
+        if (!content.equals("")) {
             writer.write(content);
         }
     }

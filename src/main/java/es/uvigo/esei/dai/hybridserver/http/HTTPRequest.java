@@ -21,7 +21,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.net.URLDecoder;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -53,16 +52,24 @@ public class HTTPRequest {
 	      throw new HTTPParseException("Formato de solicitud HTTP inválido.");
 	    }
 	
-	    if (requestParts[0].isEmpty() /*|| (!requestParts[0].equals(HTTPRequestMethod.values()))*/) {
+	    // METHOD
+	    
+	    if (requestParts[0].isEmpty()) {
 	        throw new HTTPParseException("Método HTTP faltante o no soportado en la solicitud");
 	    }
-	    this.method = requestParts[0];
-	
+	    try {
+	    	this.method = HTTPRequestMethod.valueOf(requestParts[0]);
+		} catch (IllegalArgumentException e) {
+		    throw new HTTPParseException("Método HTTP no soportado: " + requestParts[0]);
+		}
+	    
+	    // RESOURCECHAIN
 	    if (requestParts[1].isEmpty() || requestParts[1].contains("HTTP/")) {
 	        throw new HTTPParseException("Recurso faltante o mal formado en la solicitud");
 	    }
 	    this.resourceChain = requestParts[1];
 
+	    // HTTPVERSION
 	    if (!requestParts[2].startsWith("HTTP/")) {
 	        throw new HTTPParseException("Versión HTTP faltante o incorrecta");
 	    }
@@ -112,27 +119,30 @@ public class HTTPRequest {
 	    
 	    // CONTENT
 	    
-        if (headers.containsKey("Content-Length")) {
-        	this.contentLength = Integer.parseInt(headers.get(HTTPHeaders.CONTENT_LENGTH.getHeader()));
-    	    char[] contentBuffer = new char[this.contentLength];
-    	    bufferedReader.read(contentBuffer, 0, this.contentLength);
+        if (this.headers.containsKey(HTTPHeaders.CONTENT_LENGTH.getHeader())) {
+        	this.contentLength = Integer.parseInt(this.headers.get(HTTPHeaders.CONTENT_LENGTH.getHeader()));
+    	    char[] contentBuffer = new char[contentLength];
+    	    bufferedReader.read(contentBuffer, 0, contentLength);
     	    this.content = new String(contentBuffer);
-
-    	    String type = headers.get(HTTPHeaders.CONTENT_TYPE.getHeader());
-            if (type != null && type.equals(MIME.FORM.getMime())) {
-                this.content = URLDecoder.decode(this.content, "UTF-8");
-
-                String[] parts = this.content.split("&");
-                for (String part : parts) {
-                	if (!part.contains("="))
-    					throw new HTTPParseException("Invalid parameters");
-                    String[] keyValue = part.split("=", 2);
-                    if (keyValue.length == 2) {
-                        this.parameters.put(keyValue[0], keyValue[1]); 
-                    }
+        }
+        
+	    String type = headers.get(HTTPHeaders.CONTENT_TYPE.getHeader());
+        if (type != null && type.startsWith(MIME.FORM.getMime())) {
+        	this.content = URLDecoder.decode(content, "UTF-8");
+        }
+        
+        if(this.method == HTTPRequestMethod.POST) {
+            String[] parts = this.content.split("&");
+            for (String part : parts) {
+            	if (!part.contains("="))
+					throw new HTTPParseException("Invalid parameters");
+                String[] keyValue = part.split("=", 2);
+                if (keyValue.length == 2) {
+                    this.parameters.put(keyValue[0], keyValue[1]); 
                 }
             }
         }
+      
 	}
 
 	public HTTPRequestMethod getMethod() {
@@ -168,7 +178,7 @@ public class HTTPRequest {
 	}
 
 	public int getContentLength() {
-		return this.content != null ? this.content.length() : 0;
+		return this.contentLength;
 	}
 
 	@Override

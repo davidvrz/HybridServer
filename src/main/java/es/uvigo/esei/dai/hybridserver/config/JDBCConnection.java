@@ -9,14 +9,12 @@ public class JDBCConnection {
     private static String user;
     private static String password;
 
-    // Método para inicializar la conexión con parámetros
     public static void initialize(String dbUrl, String dbUser, String dbPassword) {
         url = dbUrl;
         user = dbUser;
         password = dbPassword;
     }
 
-    // Método para obtener la conexión
     public static Connection getConnection() throws SQLException {
     	return DriverManager.getConnection(url, user, password);
     }

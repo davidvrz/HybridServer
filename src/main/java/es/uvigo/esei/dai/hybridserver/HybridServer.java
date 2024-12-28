@@ -18,20 +18,18 @@
 package es.uvigo.esei.dai.hybridserver;
 
 import es.uvigo.esei.dai.hybridserver.config.JDBCConnection;
-import es.uvigo.esei.dai.hybridserver.config.JDBCException;
-import es.uvigo.esei.dai.hybridserver.http.HTTPParseException;
-import es.uvigo.esei.dai.hybridserver.http.HTTPRequest;
-import es.uvigo.esei.dai.hybridserver.http.HTTPResponse;
-import es.uvigo.esei.dai.hybridserver.http.HTTPResponseStatus;
-import es.uvigo.esei.dai.hybridserver.model.PagesDBDAO;
+import es.uvigo.esei.dai.hybridserver.controller.HTMLController;
+import es.uvigo.esei.dai.hybridserver.controller.XMLController;
+import es.uvigo.esei.dai.hybridserver.controller.XSDController;
+import es.uvigo.esei.dai.hybridserver.controller.XSLTController;
+import es.uvigo.esei.dai.hybridserver.model.HTMLDBDAO;
+import es.uvigo.esei.dai.hybridserver.model.XMLDBDAO;
+import es.uvigo.esei.dai.hybridserver.model.XSDDBDAO;
+import es.uvigo.esei.dai.hybridserver.model.XSLTDBDAO;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
@@ -48,6 +46,14 @@ public class HybridServer implements AutoCloseable {
     private Thread serverThread;
     private boolean stop;
     private ExecutorService threadPool;
+  
+	private HTMLController htmlController;
+	private XMLController xmlController;
+	private XSDController xsdController;
+	private XSLTController xsltController;
+
+	private Configuration configuration=null;
+	//private Endpoint endPoint=null;
 
     public HybridServer() {
         this.servicePort = 8888;
@@ -57,28 +63,43 @@ public class HybridServer implements AutoCloseable {
         dbPassword = "hsdbpass";
         
         JDBCConnection.initialize(dbUrl, dbUser, dbPassword);
-        //initializePages();
+        htmlController = new HTMLController(new HTMLDBDAO());
+        
     }
 	
-	public HybridServer(Map<String, String> pages) {
-		this.servicePort = 8888;
-        this.maxClients = 50;
-        //initializePages();
-	}
-	
 	public HybridServer(Properties properties) {
-	    this.servicePort = Integer.parseInt(properties.getProperty("port", "8888"));
-        this.maxClients = Integer.parseInt(properties.getProperty("numClients", "50"));
-        String dbUrl = properties.getProperty("db.url", "jdbc:mysql://localhost:3306/hstestdb");
-        String dbUser = properties.getProperty("db.user", "hsdb");
-        String dbPassword = properties.getProperty("db.password", "hsdbpass");
+	    this.servicePort = Integer.parseInt(properties.getProperty("port"));
+        this.maxClients = Integer.parseInt(properties.getProperty("numClients"));
+        dbUrl = properties.getProperty("db.url");
+        dbUser = properties.getProperty("db.user");
+        dbPassword = properties.getProperty("db.password");
         
         JDBCConnection.initialize(dbUrl, dbUser, dbPassword);
-        //initializePages();
+        htmlController = new HTMLController(new HTMLDBDAO());
+        xmlController = new XMLController(new XMLDBDAO());
+        xsdController = new XSDController(new XSDDBDAO());
+        xsltController = new XSLTController(new XSLTDBDAO());
+	}
+	
+	public HybridServer(Configuration configuration) {
+		this.configuration = configuration;
+
+		this.servicePort = configuration.getHttpPort();
+		this.maxClients = configuration.getNumClients();
+		dbUrl = configuration.getDbURL();
+		dbUser = configuration.getDbUser();
+		dbPassword = configuration.getDbPassword();
+
+		JDBCConnection.initialize(dbUrl, dbUser, dbPassword);
+		htmlController = new HTMLController(new HTMLDBDAO());
+		xmlController = new XMLController(new XMLDBDAO());
+		xsdController = new XSDController(new XSDDBDAO());
+		xsltController = new XSLTController(new XSLTDBDAO());
+
 	}
 	
 	public int getPort() {
-		return servicePort;
+		return this.servicePort;
 	}
 	
 	public void start() {
@@ -93,7 +114,7 @@ public class HybridServer implements AutoCloseable {
 						if (stop)
 							break;
 
-						threadPool.execute(new HybridServerThread(clientSocket));
+						threadPool.execute(new HybridServerThread(clientSocket, htmlController, xmlController, xsdController, xsltController));
 						
 					} catch (IOException e) {
                         e.printStackTrace();
@@ -108,20 +129,6 @@ public class HybridServer implements AutoCloseable {
     	this.stop = false;
     	this.serverThread.start();
   	}
-
-	public static void initializePages() {
-		PagesDBDAO pagesDBDAO = new PagesDBDAO();
-		
-		try {
-			if (!pagesDBDAO.hasPages()) {
-		        pagesDBDAO.savePage("<html><body><h1>Bienvenida a Hybrid Server</h1><p>Este es el servidor que sirve páginas HTML.</p></body></html>");
-		        pagesDBDAO.savePage("<html><body><h1>Acerca de</h1><p>Este servidor fue creado para servir páginas almacenadas en una base de datos.</p></body></html>");
-			}
-		} catch (JDBCException e) {
-			System.err.println("Error al inicializar las páginas: " + e.getMessage());
-		}
-  
-	}	
   
   
   	@Override
