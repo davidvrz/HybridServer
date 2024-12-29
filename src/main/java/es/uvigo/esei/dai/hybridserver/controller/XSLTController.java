@@ -17,48 +17,7 @@ public class XSLTController {
         this.xsltDAO = dao;
     }
 
-    public void handleGetRequest(HTTPRequest request, HTTPResponse response, int port) {
-        String resource = request.getResourceName();
-        String uuid = request.getResourceParameters().get("uuid");
-
-        switch (resource) {
-            case "xslt":
-                handleXsltGet(uuid, response, port);
-                break;
-            /*case "":
-                handleWelcomePage(response, port);
-                break;*/
-            default:
-                handleNotFound(response);
-                break;
-        }
-    }
-
-    public void handlePostRequest(HTTPRequest request, HTTPResponse response) {
-        if (request.getResourceParameters().containsKey("xslt")) {
-            handleXsltPost(request, response);
-        } else {
-            response.setStatus(HTTPResponseStatus.S400);
-            response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.APPLICATION_XML.getMime());
-            response.setContent("400 Bad Request - 'xslt' parameter is missing");
-        }
-    }
-
-    public void handleDeleteRequest(HTTPRequest request, HTTPResponse response) {
-        String resource = request.getResourceName();
-        String uuid = request.getResourceParameters().get("uuid");
-
-        switch (resource) {
-            case "xslt":
-                handleXsltDelete(uuid, response);
-                break;
-            default:
-                handleNotFound(response);
-                break;
-        }
-    }
-
-    private void handleXsltGet(String uuid, HTTPResponse response, int port) {
+    public void handleXsltGet(String uuid, HTTPResponse response, int port) {
         try {
             if (uuid != null && !uuid.isEmpty()) {
                 if (xsltDAO.containsStylesheet(uuid)) {
@@ -73,8 +32,8 @@ public class XSLTController {
                 }
             } else {
                 response.setStatus(HTTPResponseStatus.S200);
-                response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.APPLICATION_XML.getMime());
-                response.setContent(generateXsltHome(port));
+                response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
+                response.setContent(generateXsltPageHome(port));
             }
         } catch (JDBCException e) {
             response.setStatus(HTTPResponseStatus.S500);
@@ -87,7 +46,7 @@ public class XSLTController {
         }
     }
 
-    private void handleXsltPost(HTTPRequest request, HTTPResponse response) {
+    public void handleXsltPost(HTTPRequest request, HTTPResponse response) {
         try {
             String xsltContent = request.getResourceParameters().get("xslt");
             String xsdUUID = request.getResourceParameters().get("xsd");
@@ -109,7 +68,7 @@ public class XSLTController {
                             "<p>New XSLT stylesheet added with UUID: <a href=\"xslt?uuid=" + uuid + "\">" + uuid + "</a></p>" +
                             "</body></html>");
                     response.setStatus(HTTPResponseStatus.S200);
-                    response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.APPLICATION_XML.getMime());
+                    response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
                     response.setContent(content.toString());
                 }
             } else {
@@ -128,7 +87,7 @@ public class XSLTController {
         }
     }
 
-    private void handleXsltDelete(String uuid, HTTPResponse response) {
+    public void handleXsltDelete(String uuid, HTTPResponse response) {
         try {
             if (uuid != null && !uuid.isEmpty()) {
                 if (xsltDAO.containsStylesheet(uuid)) {
@@ -162,26 +121,20 @@ public class XSLTController {
         }
     }
 
-    private String generateXsltHome(int port) {
-        StringBuilder stringBuilder = new StringBuilder("<!DOCTYPE html>" + "<html lang='es'>" +
-                "<head>" + "<meta charset='utf-8'/>" + "<title>Hybrid Server</title>" + "</head>" +
-                "<body>" + "<h1>Hybrid Server</h1>" + "<ul>");
+    private String generateXsltPageHome(int port) {
+        StringBuilder stringBuilder = new StringBuilder("<!DOCTYPE html>" + "<html lang='es'>" 
+        		+ "<head>" + "  <meta charset='utf-8'/>" + "  <title>Hybrid Server</title>" 
+        		+ "</head>" + "<body>" + "<h1>Hybrid Server</h1>" + "<ul>");
 
-        for (String stylesheetUUID : xsltDAO.listStylesheets()) {
-            stringBuilder.append("<li>UUID: <a href='http://localhost:" + port + "/xslt?uuid=" + stylesheetUUID + "'>" + stylesheetUUID + "</a></li>");
+        for (String documentUUID : xsltDAO.listStylesheets()) {
+        	stringBuilder.append("<li>UUID: <a href='http://localhost:" + port + "/xml?uuid=" + documentUUID + "'>" + documentUUID + "</a></li>");
         }
-
+        
         stringBuilder.append("</ul>");
-        stringBuilder.append("<h2>Add new stylesheet</h2>" + "<form action='/xslt' method='POST'>" +
-                "<textarea name='xslt'></textarea>" + "<input type='text' name='xsd' placeholder='XSD UUID'/>" +
-                "<button type='submit'>Submit</button>" + "</form>" + "</body></html>");
+        stringBuilder.append("<h2>Añadir nueva página</h2>" + "<form action='/xml' method='POST'>" + "<textarea name='xml'></textarea>" + "<button type='submit'>Submit</button>" + "</form>" + "</body></html>");
         stringBuilder.append("</body>" + "</html>");
-
+        
         return stringBuilder.toString();
     }
 
-    private void handleNotFound(HTTPResponse response) {
-        response.setStatus(HTTPResponseStatus.S400);
-        response.setContent("400 Bad Request");
-    }
 }

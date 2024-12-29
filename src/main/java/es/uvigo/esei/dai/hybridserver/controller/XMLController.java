@@ -10,58 +10,17 @@ import es.uvigo.esei.dai.hybridserver.http.MIME;
 import es.uvigo.esei.dai.hybridserver.model.XMLDAO;
 
 public class XMLController {
-    private XMLDAO XMLDAO;
+    private XMLDAO xmlDAO;
 
     public XMLController(XMLDAO dao) {
-        this.XMLDAO = dao;
+        this.xmlDAO = dao;
     }
 
-    public void handleGetRequest(HTTPRequest request, HTTPResponse response, int port) {
-        String resource = request.getResourceName();
-        String uuid = request.getResourceParameters().get("uuid");
-
-        switch (resource) {
-            case "xml":
-                handleXmlGet(uuid, response, port);
-                break;
-            case "":
-                handleWelcomePage(response, port);
-                break;
-            default:
-                handleNotFound(response);
-                break;
-        }
-    }
-
-    public void handlePostRequest(HTTPRequest request, HTTPResponse response) {
-        if (request.getResourceParameters().containsKey("xml")) {
-            handleXmlPost(request, response);
-        } else {
-            response.setStatus(HTTPResponseStatus.S400);
-            response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
-            response.setContent("400 Bad Request - 'xml' parameter is missing");
-        }
-    }
-
-    public void handleDeleteRequest(HTTPRequest request, HTTPResponse response) {
-        String resource = request.getResourceName();
-        String uuid = request.getResourceParameters().get("uuid");
-
-        switch (resource) {
-            case "xml":
-                handleXmlDelete(uuid, response);
-                break;
-            default:
-                handleNotFound(response);
-                break;
-        }
-    }
-
-    private void handleXmlGet(String uuid, HTTPResponse response, int port) {
+    public void handleXmlGet(String uuid, HTTPResponse response, int port) {
         try {
             if (uuid != null && !uuid.isEmpty()) {
-                if (XMLDAO.containsDocument(uuid)) {
-                    String xmlContent = XMLDAO.getDocument(uuid);
+                if (xmlDAO.containsDocument(uuid)) {
+                    String xmlContent = xmlDAO.getDocument(uuid);
                     response.setStatus(HTTPResponseStatus.S200);
                     response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.APPLICATION_XML.getMime());
                     response.setContent(xmlContent);
@@ -72,7 +31,7 @@ public class XMLController {
                 }
             } else {
                 response.setStatus(HTTPResponseStatus.S200);
-                response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.APPLICATION_XML.getMime());
+                response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
                 response.setContent(generateXmlPageHome(port));
             }
         } catch (JDBCException e) {
@@ -86,20 +45,21 @@ public class XMLController {
         }
     }
 
-    private void handleXmlPost(HTTPRequest request, HTTPResponse response) {
+    public void handleXmlPost(HTTPRequest request, HTTPResponse response) {
         try {
             String xmlContent = request.getResourceParameters().get("xml");
 
             if (xmlContent != null && !xmlContent.isEmpty()) {
                 UUID uuid = UUID.randomUUID();
-                XMLDAO.addDocument(uuid.toString(), xmlContent);
-                StringBuilder content = new StringBuilder("<?xml version='1.0' encoding='UTF-8'?>" +
-                        "<response>" +
-                        "<message>New XML document added with UUID: <a href=\"xml?uuid=" + uuid + "\">" + uuid + "</a></message>" +
-                        "</response>");
+                xmlDAO.addDocument(uuid.toString(), xmlContent);
+                StringBuilder content = new StringBuilder("<!DOCTYPE html>" +
+                        "<html lang='es'>" + "<head><meta charset='utf-8'/>" +
+                        "<title>Hybrid Server</title></head>" + "<body><h1>Hybrid Server</h1>" +
+                        "<p>Nuevo documento añadido con UUID: <a href=\"xml?uuid=" + uuid + "\">" + uuid + "</a></p>" +
+                        "</body></html>");
 
                 response.setStatus(HTTPResponseStatus.S200);
-                response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.APPLICATION_XML.getMime());
+                response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
                 response.setContent(content.toString());
             } else {
                 response.setStatus(HTTPResponseStatus.S400);
@@ -117,15 +77,15 @@ public class XMLController {
         }
     }
 
-    private void handleXmlDelete(String uuid, HTTPResponse response) {
+    public void handleXmlDelete(String uuid, HTTPResponse response) {
         try {
             if (uuid != null && !uuid.isEmpty()) {
-                if (XMLDAO.containsDocument(uuid)) {
-                    XMLDAO.deleteDocument(uuid);
-                    StringBuilder content = new StringBuilder("<?xml version='1.0' encoding='UTF-8'?>" +
-                            "<response>" +
-                            "<message>XML document with UUID: " + uuid + " successfully deleted.</message>" +
-                            "</response>");
+                if (xmlDAO.containsDocument(uuid)) {
+                	xmlDAO.deleteDocument(uuid);
+                    StringBuilder content = new StringBuilder("<!DOCTYPE html>" + "<html lang='es'>" + "<head>" 
+                            + "  <meta charset='utf-8'/>" + "  <title>Hybrid Server</title>" + "</head>" + "<body>" 
+                            + "<h1>Hybrid Server</h1>" + "<p>Documento con UUID: " + uuid + " eliminado exitosamente.</p>" 
+                            + "</body>" + "</html>");
 
                     response.setStatus(HTTPResponseStatus.S200);
                     response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.APPLICATION_XML.getMime());
@@ -151,41 +111,20 @@ public class XMLController {
         }
     }
 
-    private void handleWelcomePage(HTTPResponse response, int port) {
-        StringBuilder stringBuilder = new StringBuilder("<?xml version='1.0' encoding='UTF-8'?>" +
-                "<response>" +
-                "<message>Welcome to the Hybrid Server</message>" +
-                "<a href='http://localhost:" + port + "/xml'>List of XML Documents</a>" +
-                "</response>");
-
-        response.setStatus(HTTPResponseStatus.S200);
-        response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.APPLICATION_XML.getMime());
-        response.setContent(stringBuilder.toString());
-    }
-
     private String generateXmlPageHome(int port) {
-        StringBuilder stringBuilder = new StringBuilder("<?xml version='1.0' encoding='UTF-8'?>" +
-                "<response>" +
-                "<h1>List of XML Documents</h1><ul>");
+        StringBuilder stringBuilder = new StringBuilder("<!DOCTYPE html>" + "<html lang='es'>" 
+        		+ "<head>" + "  <meta charset='utf-8'/>" + "  <title>Hybrid Server</title>" 
+        		+ "</head>" + "<body>" + "<h1>Hybrid Server</h1>" + "<ul>");
 
-        for (String documentUUID : XMLDAO.listDocuments()) {
-            stringBuilder.append("<li>UUID: <a href='http://localhost:" + port + "/xml?uuid=" + documentUUID + "'>" + documentUUID + "</a></li>");
+        for (String documentUUID : xmlDAO.listDocuments()) {
+        	stringBuilder.append("<li>UUID: <a href='http://localhost:" + port + "/xml?uuid=" + documentUUID + "'>" + documentUUID + "</a></li>");
         }
-
+        
         stringBuilder.append("</ul>");
-        stringBuilder.append("<h2>Add New XML Document</h2>" +
-                "<form action='/xml' method='POST'>" +
-                "<textarea name='xml'></textarea>" +
-                "<button type='submit'>Submit</button>" +
-                "</form>" +
-                "</response>");
+        stringBuilder.append("<h2>Añadir nueva página</h2>" + "<form action='/xml' method='POST'>" + "<textarea name='xml'></textarea>" + "<button type='submit'>Submit</button>" + "</form>" + "</body></html>");
+        stringBuilder.append("</body>" + "</html>");
         
         return stringBuilder.toString();
     }
 
-    private void handleNotFound(HTTPResponse response) {
-        response.setStatus(HTTPResponseStatus.S400);
-        response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
-        response.setContent("400 Bad Request");
-    }
 }

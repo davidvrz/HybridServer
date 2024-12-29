@@ -11,11 +11,12 @@ import es.uvigo.esei.dai.hybridserver.controller.HTMLController;
 import es.uvigo.esei.dai.hybridserver.controller.XMLController;
 import es.uvigo.esei.dai.hybridserver.controller.XSDController;
 import es.uvigo.esei.dai.hybridserver.controller.XSLTController;
-
+import es.uvigo.esei.dai.hybridserver.http.HTTPHeaders;
 import es.uvigo.esei.dai.hybridserver.http.HTTPParseException;
 import es.uvigo.esei.dai.hybridserver.http.HTTPRequest;
 import es.uvigo.esei.dai.hybridserver.http.HTTPResponse;
 import es.uvigo.esei.dai.hybridserver.http.HTTPResponseStatus;
+import es.uvigo.esei.dai.hybridserver.http.MIME;
 
 public class HybridServerThread implements Runnable {
 	private final Socket socket;
@@ -41,21 +42,82 @@ public class HybridServerThread implements Runnable {
     		HTTPRequest request = new HTTPRequest(reader);
 		    HTTPResponse response = new HTTPResponse();
 
-            switch(request.getMethod()) {
-                case GET:
-                    controller.handleGetRequest(request, response, port);
-                    break;
-                case POST:
-                    controller.handlePostRequest(request, response);
-                    break;
-                case DELETE:
-                    controller.handleDeleteRequest(request, response);
-                    break;
-                default:
-                    response.setStatus(HTTPResponseStatus.S405);
-                    response.setContent("405 Method Not Allowed");
-                    break;
-            }
+		    String resource = request.getResourceName();
+        	String uuid = request.getResourceParameters().get("uuid");
+        	
+        	System.out.println(request.toString());
+        	System.out.println(resource);
+		    
+	        switch (request.getMethod()) {
+            case GET:
+                switch (resource) {
+                    case "html":
+                        htmlController.handleHtmlGet(uuid, response, port);
+                        break;
+                    case "xml":
+                        xmlController.handleXmlGet(uuid, response, port);
+                        break;
+                    case "xsd":
+                        xsdController.handleXsdGet(uuid, response, port);
+                        break;
+                    case "xslt":
+                        xsltController.handleXsltGet(uuid, response, port);
+                        break;
+                    case "":
+                        handleWelcomePage(response, port);
+                        break;
+                    default:
+                        handleNotFound(response);
+                        break;
+                }
+                break;
+
+            case POST:
+                switch (resource) {
+                    case "html":
+                        htmlController.handleHtmlPost(request, response);
+                        break;
+                    case "xml":
+                        xmlController.handleXmlPost(request, response);
+                        break;
+                    case "xsd":
+                        xsdController.handleXsdPost(request, response);
+                        break;
+                    case "xslt":
+                        xsltController.handleXsltPost(request, response);
+                        break;
+                    default:
+                        handleNotFound(response);
+                        break;
+                }
+                break;
+
+            case DELETE:
+                switch (resource) {
+                    case "html":
+                        htmlController.handleHtmlDelete(uuid, response);
+                        break;
+                    case "xml":
+                        xmlController.handleXmlDelete(uuid, response);
+                        break;
+                    case "xsd":
+                        xsdController.handleXsdDelete(uuid, response);
+                        break;
+                    case "xslt":
+                        xsltController.handleXsltDelete(uuid, response);
+                        break;
+                    default:
+                        handleNotFound(response);
+                        break;
+                }
+                break;
+
+            default:
+                response.setStatus(HTTPResponseStatus.S405);
+                response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
+                response.setContent("405 Method Not Allowed");
+                break;
+        }
             
     		System.out.println(response.toString());
 
@@ -75,5 +137,31 @@ public class HybridServerThread implements Runnable {
 			e.printStackTrace();
 		}
  
+    }
+    
+    
+    private void handleWelcomePage(HTTPResponse response, int port) {
+        StringBuilder stringBuilder = new StringBuilder("<!DOCTYPE html>" + "<html lang='es'>" + "<head>"
+                + "<meta charset='utf-8'/>" + "  <title>Hybrid Server</title>" + "</head>"
+                + "<body>" + "<h1>Hybrid Server</h1>"
+                + "<p>Autores: David Álvarez Iglesias, Antonio Caride Pernas.</p>"
+                + "<ul>"
+                + "<li><a href='http://localhost:" + port + "/html'>Lista de Páginas HTML</a></li>"
+                + "<li><a href='http://localhost:" + port + "/xml'>Lista de Páginas XML</a></li>"
+                + "<li><a href='http://localhost:" + port + "/xsd'>Lista de Páginas XSD</a></li>"
+                + "<li><a href='http://localhost:" + port + "/xslt'>Lista de Páginas XSLT</a></li>"
+                + "</ul>"
+                + "</body>" + "</html>");
+
+        response.setStatus(HTTPResponseStatus.S200);
+        response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
+        response.setContent(stringBuilder.toString());
+    }
+
+    
+    private void handleNotFound(HTTPResponse response) {
+        response.setStatus(HTTPResponseStatus.S400);
+        response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
+        response.setContent("400 Bad Request");
     }
 }

@@ -64,7 +64,9 @@ public class HybridServer implements AutoCloseable {
         
         JDBCConnection.initialize(dbUrl, dbUser, dbPassword);
         htmlController = new HTMLController(new HTMLDBDAO());
-        
+        xmlController = new XMLController(new XMLDBDAO());
+        xsdController = new XSDController(new XSDDBDAO());
+        xsltController = new XSLTController(new XSLTDBDAO());
     }
 	
 	public HybridServer(Properties properties) {
