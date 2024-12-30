@@ -15,6 +15,72 @@ public class XMLController {
     public XMLController(XMLDAO dao) {
         this.xmlDAO = dao;
     }
+    /*
+    public void handleXmlGet(String uuid, HTTPResponse response, int port, HTTPRequest request) {
+        try {
+            if (uuid != null && !uuid.isEmpty()) {
+                if (xmlDAO.containsDocument(uuid)) {
+                    String xmlContent = xmlDAO.getDocument(uuid);
+
+                    // Revisamos si hay un parámetro 'xslt' en la solicitud
+                    String xsltId = request.getResourceParameters().get("xslt");
+                    
+                    if (xsltId != null && !xsltId.isEmpty()) {
+                        // Intentamos obtener la plantilla XSLT y el esquema XSD asociados
+                        String xsltTemplate = xmlDAO.getXslTemplate(xsltId);
+                        String xsdSchema = xmlDAO.getXsd(xsltId);
+
+                        if (xsltTemplate != null && xsdSchema != null) {
+                            // Validamos el XML con el esquema XSD
+                            boolean isValid = validateXmlWithXsd(xmlContent, xsdSchema);
+                            
+                            if (isValid) {
+                                // Realizamos la transformación XSLT sobre el XML
+                                String transformedXml = transformXmlWithXslt(xmlContent, xsltTemplate);
+                                
+                                // Respondemos con el XML transformado
+                                response.setStatus(HTTPResponseStatus.S200);
+                                response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.APPLICATION_XML.getMime());
+                                response.setContent(transformedXml);
+                            } else {
+                                // Si la validación falla, respondemos con un error 400
+                                response.setStatus(HTTPResponseStatus.S400);
+                                response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
+                                response.setContent("400 Bad Request - XML failed validation against the provided XSD schema.");
+                            }
+                        } else {
+                            // Si no se encuentra la plantilla XSLT o el esquema XSD
+                            response.setStatus(HTTPResponseStatus.S404);
+                            response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
+                            response.setContent("404 Not Found - XSLT template or XSD schema not found for given XSLT ID.");
+                        }
+                    } else {
+                        // Si no se proporciona parámetro 'xslt', simplemente devolvemos el XML
+                        response.setStatus(HTTPResponseStatus.S200);
+                        response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.APPLICATION_XML.getMime());
+                        response.setContent(xmlContent);
+                    }
+                } else {
+                    response.setStatus(HTTPResponseStatus.S404);
+                    response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
+                    response.setContent("404 Not Found - XML document not found for given UUID");
+                }
+            } else {
+                response.setStatus(HTTPResponseStatus.S400);
+                response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
+                response.setContent("400 Bad Request - UUID is missing");
+            }
+        } catch (JDBCException e) {
+            response.setStatus(HTTPResponseStatus.S500);
+            response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
+            response.setContent("500 Internal Server Error - " + e.getMessage());
+        } catch (Exception e) {
+            response.setStatus(HTTPResponseStatus.S500);
+            response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
+            response.setContent("500 Internal Server Error - An unexpected error occurred.");
+        }
+    }
+*/
 
     public void handleXmlGet(String uuid, HTTPResponse response, int port) {
         try {

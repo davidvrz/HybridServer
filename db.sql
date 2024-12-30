@@ -11,10 +11,10 @@ CREATE TABLE HTML  (
 );
 
 -- Crear un usuario y darle permisos
-CREATE USER 'hsdb '@'localhost' IDENTIFIED BY 'hsdbpass';
+CREATE USER 'hsdb'@'%' IDENTIFIED BY 'hsdbpass';
 
 -- Conceder permisos al usuario para acceder a la base de datos
-GRANT ALL PRIVILEGES ON hstestdb.* TO 'hsdb'@'localhost';
+GRANT ALL PRIVILEGES ON hstestdb.* TO 'hsdb'@'%';
 
 -- Aplicar los cambios
 FLUSH PRIVILEGES;
