@@ -10,6 +10,25 @@ CREATE TABLE HTML  (
     content TEXT NOT NULL
 );
 
+CREATE TABLE XSD (
+    id CHAR(36) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL
+);
+
+CREATE TABLE XML (
+    id CHAR(36) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL
+);
+
+CREATE TABLE XSLT (
+    id CHAR(36) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    xsd CHAR(36) NOT NULL
+);
+
 -- Crear un usuario y darle permisos
 CREATE USER 'hsdb'@'%' IDENTIFIED BY 'hsdbpass';
 
