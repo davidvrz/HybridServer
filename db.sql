@@ -11,20 +11,20 @@ CREATE TABLE HTML  (
 );
 
 CREATE TABLE XSD (
-    id CHAR(36) PRIMARY KEY,
+    uuid CHAR(36) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     content TEXT NOT NULL
 );
 
 CREATE TABLE XML (
-    id CHAR(36) PRIMARY KEY,
+    uuid CHAR(36) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     content TEXT NOT NULL
 );
 
 CREATE TABLE XSLT (
-    id CHAR(36) PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
+    uuid CHAR(36) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,	
     content TEXT NOT NULL,
     xsd CHAR(36) NOT NULL
 );
