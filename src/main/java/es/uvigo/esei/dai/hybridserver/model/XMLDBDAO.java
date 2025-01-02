@@ -8,6 +8,16 @@ import es.uvigo.esei.dai.hybridserver.config.JDBCConnection;
 import es.uvigo.esei.dai.hybridserver.config.JDBCException;
 
 public class XMLDBDAO implements XMLDAO {
+	
+	private String DB_URL;
+	private String DB_PASSWORD;
+	private String DB_USER;
+
+	public XMLDBDAO (String DB_URL, String DB_PASSWORD, String DB_USER) {
+		this.DB_URL = DB_URL;
+		this.DB_PASSWORD = DB_PASSWORD;
+		this.DB_USER = DB_USER;
+	}
 
     @Override
     public void addDocument(String uuid, String content) {
