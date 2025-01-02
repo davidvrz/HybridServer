@@ -126,37 +126,6 @@ public class XMLController {
         }
     }
 
-
-    
-    public void handleXmlGet(String uuid, HTTPResponse response, int port) {
-        try {
-            if (uuid != null && !uuid.isEmpty()) {
-                if (xmlDAO.containsDocument(uuid)) {
-                    String xmlContent = xmlDAO.getDocument(uuid);
-                    response.setStatus(HTTPResponseStatus.S200);
-                    response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.APPLICATION_XML.getMime());
-                    response.setContent(xmlContent);
-                } else {
-                    response.setStatus(HTTPResponseStatus.S404);
-                    response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
-                    response.setContent("404 Not Found - XML document not found for given UUID");
-                }
-            } else {
-                response.setStatus(HTTPResponseStatus.S200);
-                response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
-                response.setContent(generateXmlPageHome(port));
-            }
-        } catch (JDBCException e) {
-            response.setStatus(HTTPResponseStatus.S500);
-            response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
-            response.setContent("500 Internal Server Error - " + e.getMessage());
-        } catch (Exception e) {
-            response.setStatus(HTTPResponseStatus.S500);
-            response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
-            response.setContent("500 Internal Server Error - An unexpected error occurred.");
-        }
-    }
-
     public void handleXmlPost(HTTPRequest request, HTTPResponse response) {
         try {
             String xmlContent = request.getResourceParameters().get("xml");

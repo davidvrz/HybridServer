@@ -28,30 +28,30 @@ public class ControllerService implements WebServiceInterface {
 	}
 
 	public List<String> getHtmlUuids() {
-		HTMLDBDAO dbDao = new HTMLDBDAO(DB_URL, DB_PASSWORD, DB_USER);
+		HTMLDBDAO dbDao = new HTMLDBDAO();
 		return dbDao.listDocuments();
 	}
 
 	public List<String> getXmlUuids() {
-		XMLDBDAO dbDao = new XMLDBDAO(DB_URL, DB_PASSWORD, DB_USER);
+		XMLDBDAO dbDao = new XMLDBDAO();
 		return dbDao.listDocuments();
 	}
 
 
 	public List<String> getXsdUuids() {
-		XSDDBDAO dbDao = new XSDDBDAO(DB_URL, DB_PASSWORD, DB_USER);
+		XSDDBDAO dbDao = new XSDDBDAO();
 		return dbDao.listSchemas();
 	}
 
 
 	public List<String> getXsltUuids() {
-		XSLTDBDAO dbDao = new XSLTDBDAO(DB_URL, DB_PASSWORD, DB_USER);
+		XSLTDBDAO dbDao = new XSLTDBDAO();
 		return dbDao.listStylesheets();
 	}
 
 
 	public String getHtmlContent(String htmlUuid) {
-		HTMLDBDAO dbDao = new HTMLDBDAO(DB_URL, DB_PASSWORD, DB_USER);
+		HTMLDBDAO dbDao = new HTMLDBDAO();
 		return dbDao.getDocument(htmlUuid);
 	}
 
