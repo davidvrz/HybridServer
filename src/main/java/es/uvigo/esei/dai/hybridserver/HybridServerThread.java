@@ -55,7 +55,7 @@ public class HybridServerThread implements Runnable {
                         htmlController.handleHtmlGet(uuid, response, port);
                         break;
                     case "xml":
-                        xmlController.handleXmlGet(uuid, response, port);
+                        xmlController.handleXmlGet(uuid, response, request, port);
                         break;
                     case "xsd":
                         xsdController.handleXsdGet(uuid, response, port);

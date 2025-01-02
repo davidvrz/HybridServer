@@ -51,8 +51,10 @@ public class XMLDBDAO implements XMLDAO {
     @Override
     public String getDocument(String uuid) {
         String query = "SELECT content FROM XML WHERE uuid = ?";
+        
         try (Connection connection = JDBCConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
+        	
             statement.setString(1, uuid);
             try (ResultSet result = statement.executeQuery()) {
                 if (result.next()) {

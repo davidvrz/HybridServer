@@ -1,4 +1,4 @@
-package es.uvigo.esei.dai.sax;
+package es.uvigo.esei.dai.hybridserver.sax;
 
 import java.util.LinkedList;
 import java.util.List;

@@ -8,13 +8,17 @@ import es.uvigo.esei.dai.hybridserver.http.HTTPRequest;
 import es.uvigo.esei.dai.hybridserver.http.HTTPResponse;
 import es.uvigo.esei.dai.hybridserver.http.HTTPResponseStatus;
 import es.uvigo.esei.dai.hybridserver.http.MIME;
+import es.uvigo.esei.dai.hybridserver.model.XSDDAO;
 import es.uvigo.esei.dai.hybridserver.model.XSLTDAO;
 
 public class XSLTController {
     private XSLTDAO xsltDAO;
+    private XSDDAO xsdDAO;
 
-    public XSLTController(XSLTDAO dao) {
-        this.xsltDAO = dao;
+    public XSLTController(XSLTDAO xsltDAO, XSDDAO xsdDAO) {
+        this.xsltDAO = xsltDAO;
+        this.xsdDAO = xsdDAO;
+        
     }
 
     public void handleXsltGet(String uuid, HTTPResponse response, int port) {
@@ -27,7 +31,7 @@ public class XSLTController {
                     response.setContent(xsltContent);
                 } else {
                     response.setStatus(HTTPResponseStatus.S404);
-                    response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.APPLICATION_XML.getMime());
+                    response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
                     response.setContent("404 Not Found - Stylesheet not found for given UUID");
                 }
             } else {
@@ -52,8 +56,7 @@ public class XSLTController {
             String xsdUUID = request.getResourceParameters().get("xsd");
 
             if (xsltContent != null && !xsltContent.isEmpty() && xsdUUID != null && !xsdUUID.isEmpty()) {
-                String xsd = xsltDAO.getXsd(xsdUUID);
-                if (xsd == null) {
+                if (!xsdDAO.containsSchema(xsdUUID)) {
                     response.setStatus(HTTPResponseStatus.S404);
                     response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.APPLICATION_XML.getMime());
                     response.setContent("404 Not Found - XSD not found for given UUID");

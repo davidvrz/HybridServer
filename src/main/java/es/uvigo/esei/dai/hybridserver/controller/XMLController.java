@@ -17,8 +17,8 @@ import es.uvigo.esei.dai.hybridserver.http.MIME;
 import es.uvigo.esei.dai.hybridserver.model.XMLDAO;
 import es.uvigo.esei.dai.hybridserver.model.XSDDAO;
 import es.uvigo.esei.dai.hybridserver.model.XSLTDAO;
-import es.uvigo.esei.dai.sax.SAXParserImplementation;
-import es.uvigo.esei.dai.sax.SAXTransformation;
+import es.uvigo.esei.dai.hybridserver.sax.SAXParserImplementation;
+import es.uvigo.esei.dai.hybridserver.sax.SAXTransformation;
 
 public class XMLController {
     private XMLDAO xmlDAO;
@@ -31,9 +31,7 @@ public class XMLController {
         this.xsltDAO = xsltDAO;
     }
     
-    public void handleXMLGet(String xmlID, HTTPResponse response, int port, HTTPRequest request) throws HTTPParseException {
-        StringBuilder stringBuilder = new StringBuilder();
-
+    public void handleXmlGet(String xmlID, HTTPResponse response, HTTPRequest request, int port) throws HTTPParseException {
         // Obtener parámetros de la solicitud
         String xsltID = request.getResourceParameters().get("xslt");
         String xsdID = null;
@@ -77,11 +75,10 @@ public class XMLController {
                 return;
             }
         } else {
-        	 // Si no se proporciona un xmlID, devolver 400 Bad Request
-            response.setStatus(HTTPResponseStatus.S400);
-            response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
-            response.setContent("400 Bad Request - Missing required 'xmlID' parameter.");
-            return;
+        	 response.setStatus(HTTPResponseStatus.S200);
+             response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
+             response.setContent(generateXmlPageHome(port));
+             return;
         }
 
         // Validar y transformar (si corresponde)
@@ -102,7 +99,7 @@ public class XMLController {
                     String transformedContent = SAXTransformation.transformWithXSLT(xmlContent, xsltContent);
     
                     response.setStatus(HTTPResponseStatus.S200);
-                    response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.APPLICATION_XML.getMime());
+                    response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
                     response.setContent(transformedContent);
                 } catch (Exception e) {
                     // Si hay un error durante la transformación, devolver error 500

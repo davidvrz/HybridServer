@@ -66,7 +66,7 @@ public class HybridServer implements AutoCloseable {
         htmlController = new HTMLController(new HTMLDBDAO());
         xmlController = new XMLController(new XMLDBDAO(), new XSDDBDAO(), new XSLTDBDAO());
         xsdController = new XSDController(new XSDDBDAO());
-        xsltController = new XSLTController(new XSLTDBDAO());
+        xsltController = new XSLTController(new XSLTDBDAO(), new XSDDBDAO());
     }
 	
 	public HybridServer(Properties properties) {
@@ -78,9 +78,9 @@ public class HybridServer implements AutoCloseable {
         
         JDBCConnection.initialize(dbUrl, dbUser, dbPassword);
         htmlController = new HTMLController(new HTMLDBDAO());
-        xmlController = new XMLController(new XMLDBDAO());
+        xmlController = new XMLController(new XMLDBDAO(), new XSDDBDAO(), new XSLTDBDAO());
         xsdController = new XSDController(new XSDDBDAO());
-        xsltController = new XSLTController(new XSLTDBDAO());
+        xsltController = new XSLTController(new XSLTDBDAO(), new XSDDBDAO());
 	}
 	
 	public HybridServer(Configuration configuration) {
@@ -94,9 +94,9 @@ public class HybridServer implements AutoCloseable {
 
 		JDBCConnection.initialize(dbUrl, dbUser, dbPassword);
 		htmlController = new HTMLController(new HTMLDBDAO());
-		xmlController = new XMLController(new XMLDBDAO());
+		xmlController = new XMLController(new XMLDBDAO(), new XSDDBDAO(), new XSLTDBDAO());
 		xsdController = new XSDController(new XSDDBDAO());
-		xsltController = new XSLTController(new XSLTDBDAO());
+		xsltController = new XSLTController(new XSLTDBDAO(), new XSDDBDAO());
 
 	}
 	

@@ -11,7 +11,7 @@ public class XSLTDBDAO implements XSLTDAO {
 
     @Override
     public void addStylesheet(String uuid, String xslt, String xsd) {
-        String query = "INSERT INTO XSLT (uuid, xslt, xsd) VALUES (?, ?, ?)";
+        String query = "INSERT INTO XSLT (uuid, content, xsd) VALUES (?, ?, ?)";
         
         try (Connection connection = JDBCConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
@@ -64,24 +64,22 @@ public class XSLTDBDAO implements XSLTDAO {
 
     @Override
     public String getStylesheet(String uuid) {
-        String query = "SELECT xslt FROM XSLT WHERE uuid = ?";
-        String xslt = "";
+        String query = "SELECT content FROM XSLT WHERE uuid = ?";
 
         try (Connection connection = JDBCConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
                 
-            statement.setString(1, uuid);
-            
-            try (ResultSet result = statement.executeQuery()) {
-                if (result.next()) {
-                    xslt = result.getString("xslt");
-                }
-            }
+        	 statement.setString(1, uuid);
+             try (ResultSet result = statement.executeQuery()) {
+                 if (result.next()) {
+                     return result.getString("content");
+                 } else {
+                     return null;
+                 }
+             }
         } catch (SQLException e) {
             throw new JDBCException("Database error occurred while fetching stylesheet.", e);
         }
-
-        return xslt;
     }
 
     @Override
@@ -107,7 +105,6 @@ public class XSLTDBDAO implements XSLTDAO {
     @Override
     public String getXsd(String uuid) {
         String query = "SELECT xsd FROM XSLT WHERE uuid = ?";
-        String xsd = "";
 
         try (Connection connection = JDBCConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
@@ -115,14 +112,14 @@ public class XSLTDBDAO implements XSLTDAO {
             statement.setString(1, uuid);
             
             try (ResultSet result = statement.executeQuery()) {
-                if (result.next()) {
-                    xsd = result.getString("xsd");
+            	if (result.next()) {
+                    return result.getString("xsd");
+                } else {
+                    return null;
                 }
             }
         } catch (SQLException e) {
             throw new JDBCException("Database error occurred while fetching XSD.", e);
         }
-
-        return xsd;
     }
 }

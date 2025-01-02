@@ -70,23 +70,21 @@ public class XSDDBDAO implements XSDDAO {
     @Override
     public String getSchema(String uuid) {
         String query = "SELECT content FROM XSD WHERE uuid = ?";
-        String content = "";
 
         try (Connection connection = JDBCConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
 
-            statement.setString(1, uuid);
-
-            try (ResultSet result = statement.executeQuery()) {
-                result.next();
-                content = result.getString("content");
-            }
-
+        	 statement.setString(1, uuid);
+             try (ResultSet result = statement.executeQuery()) {
+                 if (result.next()) {
+                     return result.getString("content");
+                 } else {
+                     return null;
+                 }
+             }
         } catch (SQLException e) {
             throw new JDBCException("Database error occurred while fetching XSD schema.", e);
         }
-
-        return content;
     }
 
     @Override
