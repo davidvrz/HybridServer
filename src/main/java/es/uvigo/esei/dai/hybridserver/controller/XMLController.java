@@ -17,8 +17,8 @@ import es.uvigo.esei.dai.hybridserver.http.MIME;
 import es.uvigo.esei.dai.hybridserver.model.XMLDAO;
 import es.uvigo.esei.dai.hybridserver.model.XSDDAO;
 import es.uvigo.esei.dai.hybridserver.model.XSLTDAO;
-import es.uvigo.esei.dai.hybridserver.sax.SAXParserImplementation;
-import es.uvigo.esei.dai.hybridserver.sax.SAXTransformation;
+import es.uvigo.esei.dai.hybridserver.sax.SAXParsing;
+import es.uvigo.esei.dai.hybridserver.sax.XSLUtils;
 
 public class XMLController {
     private XMLDAO xmlDAO;
@@ -46,20 +46,19 @@ public class XMLController {
             	xsdID = xsltDAO.getXsd(xsltID);
             	xsltContent = xsltDAO.getStylesheet(xsltID);
             } else {
-                // Si no se encuentra el XSLT, devolver 404, pero seguir el flujo para devolver XML normal
                 response.setStatus(HTTPResponseStatus.S404);
                 response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
                 response.setContent("404 Not Found - Document not found for given xslt uuid");
-                // No hacemos return aquí, seguimos ejecutando la función
+                return;
             }
 
             if (xsdID != null && xsdDAO.containsSchema(xsdID)) {
             		xsdContent = xsdDAO.getSchema(xsdID);            	
             } else {
-                // Si no se encuentra el XSD, devolver 404, pero seguir el flujo para devolver XML normal
                 response.setStatus(HTTPResponseStatus.S404);
                 response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
                 response.setContent("404 Not Found - Document not found for given xsd uuid");
+                return;
             }
         }
 
@@ -84,7 +83,7 @@ public class XMLController {
         // Validar y transformar (si corresponde)
         if (xsdContent != null && xmlContent != null) {
         	try {
-    	        SAXParserImplementation.parseAndValidateXSD(xmlContent, xsdContent);
+    	        SAXParsing.parseAndValidateWithMemoryXSD(xmlContent, xsdContent);
     	    } catch (ParserConfigurationException | SAXException | IOException e) {
     	        // Si el XML no es válido contra el XSD, devolver error 400
     	        response.setStatus(HTTPResponseStatus.S400);
@@ -96,7 +95,7 @@ public class XMLController {
             // Si hay un XSLT asociado, transformar
             if (xsltContent != null) {
                 try {
-                    String transformedContent = SAXTransformation.transformWithXSLT(xmlContent, xsltContent);
+                    String transformedContent = XSLUtils.transformWithMemoryXSLT(xmlContent, xsltContent);
     
                     response.setStatus(HTTPResponseStatus.S200);
                     response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());

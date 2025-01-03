@@ -17,24 +17,42 @@
  */
 package es.uvigo.esei.dai.hybridserver;
 
-import java.io.File;
+import java.io.IOException;
+import java.io.Reader;
+
+import javax.xml.parsers.ParserConfigurationException;
 
 import es.uvigo.esei.dai.hybridserver.sax.ConfigurationContentHandler;
-import es.uvigo.esei.dai.hybridserver.sax.SAXParserImplementation;
+import es.uvigo.esei.dai.hybridserver.sax.SAXParsing;
 
-
+import org.xml.sax.SAXException;
 
 public class XMLConfigurationLoader {
-	
-	// Implementar en la semana 9.
-	public Configuration load(File xmlFile) throws Exception {
-		
-		ConfigurationContentHandler confContentHandler = new ConfigurationContentHandler();
-		SAXParserImplementation.parseAndValidateWithExternalXSD(xmlFile.getPath(),"configuration.xsd", confContentHandler);
-		//SAXParserImplementation.parseAndValidateWithInternalXSD(xmlFile.getPath(), confContentHandler); 
-		return confContentHandler.getConfig();
-	}
+	public Configuration load(Reader reader) throws Exception {
+		System.out.println("Cargando configuración..."); // Debug para saber si el flujo llega aquí
+        // Crear el handler para procesar la configuración
+        ConfigurationContentHandler handler = new ConfigurationContentHandler();
+
+        // Primero validamos y parseamos el XML con el XSD
+        try {
+            // Validamos y parseamos el archivo XML con el handler
+            SAXParsing.parseAndValidateWithExternalXSD("configuration.xml", "configuration.xsd", handler);
+
+            // Aquí, el handler ya ha procesado el XML, y podemos obtener la configuración
+            Configuration config = handler.getConfig();
+            
+            if (config == null) {
+                throw new Exception("La configuración está vacía.");
+            }
+
+            return config;
+        } catch (SAXException | IOException | ParserConfigurationException e) {
+            System.err.println("Error de validación o parsing: " + e.getMessage());
+            throw new Exception("Error al cargar el archivo de configuración: " + e.getMessage());
+        }
+    }
 }
+
 
 
 
