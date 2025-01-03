@@ -43,7 +43,7 @@ public class XMLConfigurationLoaderTest {
 	@Test
 	public final void testLoad() throws Exception {
 		try (Reader xmlReader = openReaderToFile("/configuration.xml")) {
-			final Configuration configuration = this.xmlConfiguration.load(xmlReader);
+			final Configuration configuration = this.xmlConfiguration.load(xmlReader); 
 
 			assertThat(configuration.getHttpPort(), is(equalTo(10000)));
 			assertThat(configuration.getNumClients(), is(equalTo(15)));
