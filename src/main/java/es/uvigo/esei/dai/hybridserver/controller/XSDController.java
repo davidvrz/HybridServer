@@ -1,7 +1,9 @@
 package es.uvigo.esei.dai.hybridserver.controller;
 
+import java.util.List;
 import java.util.UUID;
 
+import es.uvigo.esei.dai.hybridserver.ServerConfiguration;
 import es.uvigo.esei.dai.hybridserver.config.JDBCException;
 import es.uvigo.esei.dai.hybridserver.http.HTTPHeaders;
 import es.uvigo.esei.dai.hybridserver.http.HTTPRequest;
@@ -9,12 +11,17 @@ import es.uvigo.esei.dai.hybridserver.http.HTTPResponse;
 import es.uvigo.esei.dai.hybridserver.http.HTTPResponseStatus;
 import es.uvigo.esei.dai.hybridserver.http.MIME;
 import es.uvigo.esei.dai.hybridserver.model.XSDDAO;
+import es.uvigo.esei.dai.hybridserver.webservice.WebServiceConnection;
+import es.uvigo.esei.dai.hybridserver.webservice.WebServiceInterface;
+import jakarta.xml.ws.WebServiceException;
 
 public class XSDController {
     private XSDDAO xsdDAO;
+	private List<ServerConfiguration> listServers;
 
-    public XSDController(XSDDAO dao) {
+    public XSDController(XSDDAO dao, List<ServerConfiguration> listServers) {
         this.xsdDAO = dao;
+        this.listServers= listServers;
     }
 
     public void handleXsdGet(String uuid, HTTPResponse response, int port) {
@@ -26,9 +33,16 @@ public class XSDController {
                     response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.APPLICATION_XML.getMime());
                     response.setContent(xsdContent);
                 } else {
-                    response.setStatus(HTTPResponseStatus.S404);
-                    response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
-                    response.setContent("404 Not Found - XSD Schema not found for given UUID");
+                    String remoteContent = fetchXsdFromOtherServers(uuid);
+                    if (remoteContent != null) {
+                        response.setStatus(HTTPResponseStatus.S200);
+                        response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.APPLICATION_XML.getMime());
+                        response.setContent(remoteContent);
+                    } else {
+                        response.setStatus(HTTPResponseStatus.S404);
+                        response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
+                        response.setContent("404 Not Found - XSD Schema not found for given UUID");
+                    }
                 }
             } else {
                 response.setStatus(HTTPResponseStatus.S200);
@@ -37,11 +51,11 @@ public class XSDController {
             }
         } catch (JDBCException e) {
             response.setStatus(HTTPResponseStatus.S500);
-            response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
+            response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.APPLICATION_XML.getMime());
             response.setContent("500 Internal Server Error - " + e.getMessage());
         } catch (Exception e) {
             response.setStatus(HTTPResponseStatus.S500);
-            response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
+            response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.APPLICATION_XML.getMime());
             response.setContent("500 Internal Server Error - An unexpected error occurred.");
         }
     }
@@ -127,5 +141,29 @@ public class XSDController {
         stringBuilder.append("</body>" + "</html>");
         
         return stringBuilder.toString();
+    }
+    
+    
+    private String fetchXsdFromOtherServers(String uuid) {
+        if (listServers != null) {
+            for (ServerConfiguration serverConfig : listServers) {
+                try {
+                    WebServiceConnection wsc = new WebServiceConnection(
+                        serverConfig.getName(),
+                        serverConfig.getWsdl(),
+                        serverConfig.getNamespace(),
+                        serverConfig.getService(),
+                        serverConfig.getHttpAddress()
+                    );
+                    WebServiceInterface ws = wsc.setConnection();
+                    if (ws.getXsdUuids().contains(uuid)) {
+                        return ws.getXsdContent(uuid);
+                    }
+                } catch (WebServiceException e) {
+                    System.out.println("Failed to connect to server: " + serverConfig.getName());
+                }
+            }
+        }
+        return null;
     }
 }

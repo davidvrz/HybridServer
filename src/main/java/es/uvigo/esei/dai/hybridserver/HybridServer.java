@@ -26,10 +26,13 @@ import es.uvigo.esei.dai.hybridserver.model.HTMLDBDAO;
 import es.uvigo.esei.dai.hybridserver.model.XMLDBDAO;
 import es.uvigo.esei.dai.hybridserver.model.XSDDBDAO;
 import es.uvigo.esei.dai.hybridserver.model.XSLTDBDAO;
+import es.uvigo.esei.dai.hybridserver.webservice.ControllerService;
+import jakarta.xml.ws.Endpoint;
 
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
@@ -53,7 +56,8 @@ public class HybridServer implements AutoCloseable {
 	private XSLTController xsltController;
 
 	private Configuration configuration=null;
-	//private Endpoint endPoint=null;
+	private Endpoint endPoint=null;
+	List<ServerConfiguration> listServers;
 
     public HybridServer() {
         this.servicePort = 8888;
@@ -63,10 +67,10 @@ public class HybridServer implements AutoCloseable {
         dbPassword = "hsdbpass";
         
         JDBCConnection.initialize(dbUrl, dbUser, dbPassword);
-        htmlController = new HTMLController(new HTMLDBDAO());
-        xmlController = new XMLController(new XMLDBDAO(), new XSDDBDAO(), new XSLTDBDAO());
-        xsdController = new XSDController(new XSDDBDAO());
-        xsltController = new XSLTController(new XSLTDBDAO(), new XSDDBDAO());
+        htmlController = new HTMLController(new HTMLDBDAO(), listServers);
+        xmlController = new XMLController(new XMLDBDAO(), new XSDDBDAO(), new XSLTDBDAO(),listServers);
+        xsdController = new XSDController(new XSDDBDAO(),listServers);
+        xsltController = new XSLTController(new XSLTDBDAO(), new XSDDBDAO(),listServers);
     }
 	
 	public HybridServer(Properties properties) {
@@ -77,10 +81,10 @@ public class HybridServer implements AutoCloseable {
         dbPassword = properties.getProperty("db.password");
         
         JDBCConnection.initialize(dbUrl, dbUser, dbPassword);
-        htmlController = new HTMLController(new HTMLDBDAO());
-        xmlController = new XMLController(new XMLDBDAO(), new XSDDBDAO(), new XSLTDBDAO());
-        xsdController = new XSDController(new XSDDBDAO());
-        xsltController = new XSLTController(new XSLTDBDAO(), new XSDDBDAO());
+        htmlController = new HTMLController(new HTMLDBDAO(), listServers);
+        xmlController = new XMLController(new XMLDBDAO(), new XSDDBDAO(), new XSLTDBDAO(), listServers);
+        xsdController = new XSDController(new XSDDBDAO(), listServers);
+        xsltController = new XSLTController(new XSLTDBDAO(), new XSDDBDAO(), listServers);
 	}
 	
 	public HybridServer(Configuration configuration) {
@@ -96,10 +100,10 @@ public class HybridServer implements AutoCloseable {
 		System.out.println("666666666666666");
 
 		JDBCConnection.initialize(dbUrl, dbUser, dbPassword);
-		htmlController = new HTMLController(new HTMLDBDAO());
-		xmlController = new XMLController(new XMLDBDAO(), new XSDDBDAO(), new XSLTDBDAO());
-		xsdController = new XSDController(new XSDDBDAO());
-		xsltController = new XSLTController(new XSLTDBDAO(), new XSDDBDAO());
+		htmlController = new HTMLController(new HTMLDBDAO(), listServers);
+		xmlController = new XMLController(new XMLDBDAO(), new XSDDBDAO(), new XSLTDBDAO(), listServers);
+		xsdController = new XSDController(new XSDDBDAO(), listServers);
+		xsltController = new XSLTController(new XSLTDBDAO(), new XSDDBDAO(), listServers);
 
 	}
 	
@@ -113,6 +117,14 @@ public class HybridServer implements AutoCloseable {
 		public void run() {
 			try (final ServerSocket serverSocket = new ServerSocket(servicePort)) {
 				threadPool = Executors.newFixedThreadPool(maxClients);
+				try {
+					String url = configuration.getWebServiceURL();
+					endPoint = Endpoint.publish(url, new ControllerService(configuration.getDbURL(),
+							configuration.getDbPassword(), configuration.getDbUser()));
+					endPoint.setExecutor(threadPool);
+				}catch(IllegalArgumentException | NullPointerException ex) {
+					
+				}
 				while (true) {
 					try {
 						Socket clientSocket = serverSocket.accept();
@@ -139,6 +151,9 @@ public class HybridServer implements AutoCloseable {
   	@Override
   	public void close() {
 	  	this.stop = true;
+	  	
+		if(endPoint!=null)
+			endPoint.stop();
 
     	try (Socket socket = new Socket("localhost", servicePort)) {
     	// Esta conexión se hace, simplemente, para "despertar" el hilo servidor

@@ -1,6 +1,9 @@
 package es.uvigo.esei.dai.hybridserver.controller;
 
+import java.util.List;
 import java.util.UUID;
+
+import es.uvigo.esei.dai.hybridserver.ServerConfiguration;
 import es.uvigo.esei.dai.hybridserver.config.JDBCException;
 import es.uvigo.esei.dai.hybridserver.http.HTTPHeaders;
 import es.uvigo.esei.dai.hybridserver.http.HTTPRequest;
@@ -8,26 +11,38 @@ import es.uvigo.esei.dai.hybridserver.http.HTTPResponse;
 import es.uvigo.esei.dai.hybridserver.http.HTTPResponseStatus;
 import es.uvigo.esei.dai.hybridserver.http.MIME;
 import es.uvigo.esei.dai.hybridserver.model.HTMLDAO;
+import es.uvigo.esei.dai.hybridserver.webservice.WebServiceConnection;
+import es.uvigo.esei.dai.hybridserver.webservice.WebServiceInterface;
+import jakarta.xml.ws.WebServiceException;
 
 public class HTMLController {
     private HTMLDAO htmlDAO;
+	private List<ServerConfiguration> listServers;
     
-    public HTMLController(HTMLDAO dao) {
+    public HTMLController(HTMLDAO dao, List<ServerConfiguration> listServers) {
         this.htmlDAO = dao;
+        this.listServers= listServers;
     }
 
     public void handleHtmlGet(String uuid, HTTPResponse response, int port) {
         try {
-        	if (uuid != null && !uuid.isEmpty()) {
-            	if (htmlDAO.containsDocument(uuid)){
-	                String documentContent = htmlDAO.getDocument(uuid);	              
+            if (uuid != null && !uuid.isEmpty()) {
+                if (htmlDAO.containsDocument(uuid)) {
+                    String documentContent = htmlDAO.getDocument(uuid);
                     response.setStatus(HTTPResponseStatus.S200);
                     response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
                     response.setContent(documentContent);
-	            } else {
-                    response.setStatus(HTTPResponseStatus.S404);
-                    response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
-                    response.setContent("404 Not Found - Document not found for given UUID");
+                } else {
+                    String remoteContent = fetchContentFromOtherServers(uuid);
+                    if (remoteContent != null) {
+                        response.setStatus(HTTPResponseStatus.S200);
+                        response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
+                        response.setContent(remoteContent);
+                    } else {
+                        response.setStatus(HTTPResponseStatus.S404);
+                        response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
+                        response.setContent("404 Not Found - Document not found for given UUID");
+                    }
                 }
             } else {
                 response.setStatus(HTTPResponseStatus.S200);
@@ -126,5 +141,28 @@ public class HTMLController {
         stringBuilder.append("</body>" + "</html>");
         
         return stringBuilder.toString();
+    }
+    
+    public String fetchContentFromOtherServers(String uuid) {
+		if (listServers != null) {
+            for (ServerConfiguration serverConfig : listServers) {
+                try {
+                    WebServiceConnection wsc = new WebServiceConnection(
+                        serverConfig.getName(),
+                        serverConfig.getWsdl(),
+                        serverConfig.getNamespace(),
+                        serverConfig.getService(),
+                        serverConfig.getHttpAddress()
+                    );
+                    WebServiceInterface ws = wsc.setConnection();
+                    if (ws.getHtmlUuids().contains(uuid)) {
+                        return ws.getHtmlContent(uuid);
+                    }
+                } catch (WebServiceException e) {
+                    System.out.println("Failed to connect to server: " + serverConfig.getName());
+                }
+            }
+        }
+        return null;
     }
 }

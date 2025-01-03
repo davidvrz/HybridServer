@@ -50,10 +50,10 @@ public class InvalidXMLConfigurationLoaderTest {
 
 	@ParameterizedTest
 	@MethodSource("invalidConfigurationFiles")
-	public final void testLoad(String xmlFilePath) {
-		assertThrows(Exception.class, () -> {
+	public final void testLoad(String xmlFilePath) { 
+		assertThrows(Exception.class, () -> { 
 			try (Reader xmlReader = openReaderToFile(xmlFilePath)) {
-				xmlConfiguration.load(xmlReader);
+				xmlConfiguration.load(xmlReader); 
 			}
 		});
 	}

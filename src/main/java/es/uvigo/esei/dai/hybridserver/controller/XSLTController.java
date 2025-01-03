@@ -1,7 +1,9 @@
 package es.uvigo.esei.dai.hybridserver.controller;
 
+import java.util.List;
 import java.util.UUID;
 
+import es.uvigo.esei.dai.hybridserver.ServerConfiguration;
 import es.uvigo.esei.dai.hybridserver.config.JDBCException;
 import es.uvigo.esei.dai.hybridserver.http.HTTPHeaders;
 import es.uvigo.esei.dai.hybridserver.http.HTTPRequest;
@@ -10,14 +12,19 @@ import es.uvigo.esei.dai.hybridserver.http.HTTPResponseStatus;
 import es.uvigo.esei.dai.hybridserver.http.MIME;
 import es.uvigo.esei.dai.hybridserver.model.XSDDAO;
 import es.uvigo.esei.dai.hybridserver.model.XSLTDAO;
+import es.uvigo.esei.dai.hybridserver.webservice.WebServiceConnection;
+import es.uvigo.esei.dai.hybridserver.webservice.WebServiceInterface;
+import jakarta.xml.ws.WebServiceException;
 
 public class XSLTController {
     private XSLTDAO xsltDAO;
     private XSDDAO xsdDAO;
+	private List<ServerConfiguration> listServers;
 
-    public XSLTController(XSLTDAO xsltDAO, XSDDAO xsdDAO) {
+    public XSLTController(XSLTDAO xsltDAO, XSDDAO xsdDAO, List<ServerConfiguration> listServers) {
         this.xsltDAO = xsltDAO;
         this.xsdDAO = xsdDAO;
+        this.listServers= listServers;
         
     }
 
@@ -30,9 +37,16 @@ public class XSLTController {
                     response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.APPLICATION_XML.getMime());
                     response.setContent(xsltContent);
                 } else {
-                    response.setStatus(HTTPResponseStatus.S404);
-                    response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
-                    response.setContent("404 Not Found - Stylesheet not found for given UUID");
+                    String remoteContent = fetchXsltFromOtherServers(uuid);
+                    if (remoteContent != null) {
+                        response.setStatus(HTTPResponseStatus.S200);
+                        response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.APPLICATION_XML.getMime());
+                        response.setContent(remoteContent);
+                    } else {
+                        response.setStatus(HTTPResponseStatus.S404);
+                        response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
+                        response.setContent("404 Not Found - Stylesheet not found for given UUID");
+                    }
                 }
             } else {
                 response.setStatus(HTTPResponseStatus.S200);
@@ -138,6 +152,30 @@ public class XSLTController {
         stringBuilder.append("</body>" + "</html>");
         
         return stringBuilder.toString();
+    }
+    
+    
+    private String fetchXsltFromOtherServers(String uuid) {
+        if (listServers != null) {
+            for (ServerConfiguration serverConfig : listServers) {
+                try {
+                    WebServiceConnection wsc = new WebServiceConnection(
+                        serverConfig.getName(),
+                        serverConfig.getWsdl(),
+                        serverConfig.getNamespace(),
+                        serverConfig.getService(),
+                        serverConfig.getHttpAddress()
+                    );
+                    WebServiceInterface ws = wsc.setConnection();
+                    if (ws.getXsltUuids().contains(uuid)) {
+                        return ws.getXsltContent(uuid);
+                    }
+                } catch (WebServiceException e) {
+                    System.out.println("Failed to connect to server: " + serverConfig.getName());
+                }
+            }
+        }
+        return null; 
     }
 
 }
