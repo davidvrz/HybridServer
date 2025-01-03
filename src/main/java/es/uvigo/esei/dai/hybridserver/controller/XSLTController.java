@@ -130,11 +130,11 @@ public class XSLTController {
         		+ "</head>" + "<body>" + "<h1>Hybrid Server</h1>" + "<ul>");
 
         for (String documentUUID : xsltDAO.listStylesheets()) {
-        	stringBuilder.append("<li>UUID: <a href='http://localhost:" + port + "/xml?uuid=" + documentUUID + "'>" + documentUUID + "</a></li>");
+        	stringBuilder.append("<li>UUID: <a href='http://localhost:" + port + "/xslt?uuid=" + documentUUID + "'>" + documentUUID + "</a></li>");
         }
         
         stringBuilder.append("</ul>");
-        stringBuilder.append("<h2>Añadir nueva página</h2>" + "<form action='/xml' method='POST'>" + "<textarea name='xml'></textarea>" + "<button type='submit'>Submit</button>" + "</form>" + "</body></html>");
+        stringBuilder.append("<h2>Añadir nueva página</h2>" + "<form action='/xslt' method='POST'>" + "<textarea name='xslt'></textarea>" + "<button type='submit'>Submit</button>" + "</form>" + "</body></html>");
         stringBuilder.append("</body>" + "</html>");
         
         return stringBuilder.toString();

@@ -2,7 +2,7 @@
 
 <configuration xmlns="http://www.esei.uvigo.es/dai/hybridserver"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://www.esei.uvigo.es/dai/hybridserver ../configuration.xsd">
+	xsi:schemaLocation="http://www.esei.uvigo.es/dai/hybridserver ../../../configuration.xsd">
 	<connections>
 		<!-- http>10000</http-->
 		<webservice>http://localhost:20000/hybridserver</webservice>

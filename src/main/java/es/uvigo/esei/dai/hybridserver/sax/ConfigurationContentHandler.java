@@ -2,9 +2,11 @@ package es.uvigo.esei.dai.hybridserver.sax;
 
 import java.util.LinkedList;
 import java.util.List;
+
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
+
 import es.uvigo.esei.dai.hybridserver.Configuration;
 import es.uvigo.esei.dai.hybridserver.ServerConfiguration;
 
@@ -14,7 +16,8 @@ public class ConfigurationContentHandler extends DefaultHandler {
     private Configuration configuration;
     private List<ServerConfiguration> serverConfigs;
 
-    private String currentElement;
+    // Flags para detectar qué campo estamos procesando
+    private boolean isHttp, isWebservice, isNumClients, isUser, isPassword, isUrl;
 
     public List<Configuration> getConfigurations() {
         return configurations;
@@ -22,95 +25,114 @@ public class ConfigurationContentHandler extends DefaultHandler {
 
     @Override
     public void startDocument() throws SAXException {
+        // Inicializar la lista de configuraciones cuando empieza el análisis del documento
         configurations = new LinkedList<>();
     }
 
     @Override
     public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
-        currentElement = localName;
-
-        if ("configuration".equals(localName)) {
-            configuration = new Configuration();
-        } else if ("servers".equals(localName)) {
-            serverConfigs = new LinkedList<>();
-        } else if ("server".equals(localName)) {
-            ServerConfiguration serverConfig = new ServerConfiguration(
-                attributes.getValue("name"),
-                attributes.getValue("wsdl"),
-                attributes.getValue("namespace"),
-                attributes.getValue("service"),
-                attributes.getValue("httpAddress")
-            );
-            serverConfigs.add(serverConfig);
+        switch (localName) {
+            case "configuration":
+                configuration = new Configuration();
+                break;
+            case "connections":
+                // No hacer nada por ahora
+                break;
+            case "http":
+                isHttp = true;
+                break;
+            case "webservice":
+                isWebservice = true;
+                break;
+            case "numClients":
+                isNumClients = true;
+                break;
+            case "database":
+                // No hacer nada por ahora
+                break;
+            case "user":
+                isUser = true;
+                break;
+            case "password":
+                isPassword = true;
+                break;
+            case "url":
+                isUrl = true;
+                break;
+            case "servers":
+                serverConfigs = new LinkedList<>();
+                break;
+            case "server":
+                // Crear un objeto ServerConfiguration con los atributos del servidor
+                ServerConfiguration serverConfig = new ServerConfiguration(
+                    attributes.getValue("name"),
+                    attributes.getValue("wsdl"),
+                    attributes.getValue("namespace"),
+                    attributes.getValue("service"),
+                    attributes.getValue("httpAddress")
+                );
+                serverConfigs.add(serverConfig);
+                break;
         }
     }
 
     @Override
     public void characters(char[] ch, int start, int length) throws SAXException {
-        if (currentElement != null && !new String(ch, start, length).trim().isEmpty()) {
-            String textContent = new String(ch, start, length).trim();
-
-            switch (currentElement) {
-                case "http":
-                    configuration.setHttpPort(Integer.parseInt(textContent));
-                    break;
-                case "webservice":
+        String textContent = new String(ch, start, length).trim();
+        if (!textContent.isEmpty()) {
+            try {
+                if (isHttp) {
+                    // Validación del puerto HTTP
+                    int httpPort = Integer.parseInt(textContent);
+                    if (httpPort <= 0) {
+                        throw new SAXException("El parámetro 'http' debe ser un número mayor que 0.");
+                    }
+                    configuration.setHttpPort(httpPort);
+                    isHttp = false;
+                } else if (isWebservice) {
+                    // Asignar la URL del webservice
                     configuration.setWebServiceURL(textContent);
-                    break;
-                case "numClients":
-                    configuration.setNumClients(Integer.parseInt(textContent));
-                    break;
-                case "user":
+                    isWebservice = false;
+                } else if (isNumClients) {
+                    // Validación del número de clientes
+                    int numClients = Integer.parseInt(textContent);
+                    if (numClients <= 0) {
+                        throw new SAXException("El parámetro 'numClients' debe ser un número mayor que 0.");
+                    }
+                    configuration.setNumClients(numClients);
+                    isNumClients = false;
+                } else if (isUser) {
+                    // Asignar el usuario de la base de datos
                     configuration.setDbUser(textContent);
-                    break;
-                case "password":
+                    isUser = false;
+                } else if (isPassword) {
+                    // Asignar la contraseña de la base de datos
                     configuration.setDbPassword(textContent);
-                    break;
-                case "url":
+                    isPassword = false;
+                } else if (isUrl) {
+                    // Asignar la URL de la base de datos
                     configuration.setDbURL(textContent);
-                    break;
-                default:
-                    break;
+                    isUrl = false;
+                }
+            } catch (NumberFormatException e) {
+                throw new SAXException("Valor inválido: " + textContent, e);
             }
         }
     }
 
     @Override
     public void endElement(String uri, String localName, String qName) throws SAXException {
-        if ("configuration".equals(localName)) {
-            // Realiza las comprobaciones antes de agregar la configuración a la lista
-            validateConfiguration(configuration);
-            configurations.add(configuration); // Agrega la configuración completa a la lista
-        } else if ("servers".equals(localName)) {
-            configuration.setServers(serverConfigs); // Asocia la lista de servidores a la configuración
-        }
-
-        currentElement = null;
-    }
-
-    // Método para validar la configuración
-    private void validateConfiguration(Configuration config) throws SAXException {
-        if (config.getHttpPort() <= 0) {
-            throw new SAXException("El parámetro 'http' es obligatorio y no se ha definido correctamente.");
-        }
-        if (config.getWebServiceURL() == null || config.getWebServiceURL().isEmpty()) {
-            throw new SAXException("El parámetro 'webservice' es obligatorio y no se ha definido.");
-        }
-        if (config.getNumClients() <= 0) {
-            throw new SAXException("El parámetro 'numClients' es obligatorio y no se ha definido correctamente.");
-        }
-        if (config.getDbUser() == null || config.getDbUser().isEmpty()) {
-            throw new SAXException("El parámetro 'user' es obligatorio y no se ha definido.");
-        }
-        if (config.getDbPassword() == null || config.getDbPassword().isEmpty()) {
-            throw new SAXException("El parámetro 'password' es obligatorio y no se ha definido.");
-        }
-        if (config.getDbURL() == null || config.getDbURL().isEmpty()) {
-            throw new SAXException("El parámetro 'url' es obligatorio y no se ha definido.");
+        switch (localName) {
+            case "configuration":
+                configurations.add(configuration); // Al finalizar una configuración, la agregamos a la lista
+                break;
+            case "servers":
+                configuration.setServers(serverConfigs); // Agregar servidores a la configuración
+                break;
         }
     }
-
-    public Configuration getConfig() {
-        return configuration;
-    }
+    
+	public Configuration getConfig() {
+		return configuration;
+	}
 }

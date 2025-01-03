@@ -84,13 +84,16 @@ public class HybridServer implements AutoCloseable {
 	}
 	
 	public HybridServer(Configuration configuration) {
+		System.out.println("55555555555555");
 		this.configuration = configuration;
+		System.out.println(configuration);
 
 		this.servicePort = configuration.getHttpPort();
 		this.maxClients = configuration.getNumClients();
 		dbUrl = configuration.getDbURL();
 		dbUser = configuration.getDbUser();
 		dbPassword = configuration.getDbPassword();
+		System.out.println("666666666666666");
 
 		JDBCConnection.initialize(dbUrl, dbUser, dbPassword);
 		htmlController = new HTMLController(new HTMLDBDAO());

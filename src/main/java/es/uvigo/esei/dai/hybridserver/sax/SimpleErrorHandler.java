@@ -7,16 +7,16 @@ import org.xml.sax.SAXParseException;
 public class SimpleErrorHandler implements ErrorHandler {
 	@Override
 	public void warning(SAXParseException exception) throws SAXException {
-		exception.printStackTrace();
+	    throw exception;
 	}
-	
+
 	@Override
 	public void fatalError(SAXParseException exception) throws SAXException {
-		throw exception;
+	    throw exception;  // Lanzar excepción fatal
 	}
-	
+
 	@Override
 	public void error(SAXParseException exception) throws SAXException {
-		throw exception;
+	    throw exception;  // Lanzar excepción
 	}
 }

@@ -29,14 +29,14 @@ import org.xml.sax.SAXException;
 
 public class XMLConfigurationLoader {
 	public Configuration load(Reader reader) throws Exception {
-		System.out.println("Cargando configuración..."); // Debug para saber si el flujo llega aquí
         // Crear el handler para procesar la configuración
         ConfigurationContentHandler handler = new ConfigurationContentHandler();
+		System.out.println("1111111111111111111");
 
         // Primero validamos y parseamos el XML con el XSD
         try {
             // Validamos y parseamos el archivo XML con el handler
-            SAXParsing.parseAndValidateWithExternalXSD("configuration.xml", "configuration.xsd", handler);
+            SAXParsing.parseAndValidateWithExternalXSD(reader, "configuration.xsd", handler);
 
             // Aquí, el handler ya ha procesado el XML, y podemos obtener la configuración
             Configuration config = handler.getConfig();

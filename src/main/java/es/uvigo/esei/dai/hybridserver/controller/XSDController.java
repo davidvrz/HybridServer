@@ -119,11 +119,11 @@ public class XSDController {
         		+ "</head>" + "<body>" + "<h1>Hybrid Server</h1>" + "<ul>");
 
         for (String documentUUID : xsdDAO.listSchemas()) {
-        	stringBuilder.append("<li>UUID: <a href='http://localhost:" + port + "/xml?uuid=" + documentUUID + "'>" + documentUUID + "</a></li>");
+        	stringBuilder.append("<li>UUID: <a href='http://localhost:" + port + "/xsd?uuid=" + documentUUID + "'>" + documentUUID + "</a></li>");
         }
         
         stringBuilder.append("</ul>");
-        stringBuilder.append("<h2>Añadir nueva página</h2>" + "<form action='/xml' method='POST'>" + "<textarea name='xml'></textarea>" + "<button type='submit'>Submit</button>" + "</form>" + "</body></html>");
+        stringBuilder.append("<h2>Añadir nueva página</h2>" + "<form action='/xsd' method='POST'>" + "<textarea name='xsd'></textarea>" + "<button type='submit'>Submit</button>" + "</form>" + "</body></html>");
         stringBuilder.append("</body>" + "</html>");
         
         return stringBuilder.toString();

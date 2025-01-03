@@ -2,8 +2,8 @@ package es.uvigo.esei.dai.hybridserver.sax;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
+import java.io.Reader;
 import java.io.StringReader;
 
 import javax.xml.XMLConstants;
@@ -20,30 +20,35 @@ import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 
 public class SAXParsing {
-  	public static void parseAndValidateWithExternalXSD(String xmlPath, String schemaPath, ContentHandler handler)
-  			throws ParserConfigurationException, SAXException, IOException {
-	    // Construcción del schema
+	public static void parseAndValidateWithExternalXSD(Reader reader, String schemaPath, ContentHandler handler)
+	        throws ParserConfigurationException, SAXException, IOException {
+
+		System.out.println("Cargando el archivo XSD desde: " + schemaPath);
+		// Construcción del schema
 	    final SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
 	    final Schema schema = schemaFactory.newSchema(new File(schemaPath));
-	
+
 	    // Construcción del parser del documento. Se establece el esquema y se activa
 	    // la validación y comprobación de namespaces
 	    final SAXParserFactory parserFactory = SAXParserFactory.newInstance();
 	    parserFactory.setValidating(false);
 	    parserFactory.setNamespaceAware(true);
 	    parserFactory.setSchema(schema);
-	
+
 	    // Se añade el manejador de errores
 	    final SAXParser parser = parserFactory.newSAXParser();
 	    final XMLReader xmlReader = parser.getXMLReader();
 	    xmlReader.setContentHandler(handler);
 	    xmlReader.setErrorHandler(new SimpleErrorHandler());
-	
+	    
+		System.out.println("2222222222222222222222222222222222");
+
 	    // Parsing
-	    try (FileReader fileReader = new FileReader(new File(xmlPath))) {
-	      xmlReader.parse(new InputSource(fileReader));
-	    }
-  	}
+	    xmlReader.parse(new InputSource(reader));
+		System.out.println("3333333333333333333333333333");
+
+	}
+
   
 	public static void parseAndValidateWithMemoryXSD(String xmlContent, String xsdContent)
 			throws ParserConfigurationException, SAXException, IOException {

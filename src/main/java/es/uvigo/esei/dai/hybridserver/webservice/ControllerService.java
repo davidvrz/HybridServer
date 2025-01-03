@@ -57,25 +57,25 @@ public class ControllerService implements WebServiceInterface {
 
 
 	public String getXmlContent(String xmlUuid) {
-		XMLDBDAO dbDao = new XMLDBDAO(DB_URL, DB_PASSWORD, DB_USER);
+		XMLDBDAO dbDao = new XMLDBDAO();
 		return dbDao.getDocument(xmlUuid);
 	}
 
 
 	public String getXsdContent(String xsdUuid) {
-		XSDDBDAO dbDao = new XSDDBDAO(DB_URL, DB_PASSWORD, DB_USER);
+		XSDDBDAO dbDao = new XSDDBDAO();
 		return dbDao.getSchema(xsdUuid);
 	}
 
 
 	public String getXsltContent(String xsltUuid) {
-		XSLTDBDAO dbDao = new XSLTDBDAO(DB_URL, DB_PASSWORD, DB_USER);
+		XSLTDBDAO dbDao = new XSLTDBDAO();
 		return dbDao.getXsd(xsltUuid);
 	}
 
 
 	public String getAssociatedXsdUuid(String xsltUuid) {
-		XSLTDBDAO dbDao = new XSLTDBDAO(DB_URL, DB_PASSWORD, DB_USER);
+		XSLTDBDAO dbDao = new XSLTDBDAO();
 		return dbDao.getXsd(xsltUuid);
 	}
 
