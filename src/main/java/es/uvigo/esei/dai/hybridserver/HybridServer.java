@@ -26,6 +26,8 @@ import es.uvigo.esei.dai.hybridserver.model.HTMLDBDAO;
 import es.uvigo.esei.dai.hybridserver.model.XMLDBDAO;
 import es.uvigo.esei.dai.hybridserver.model.XSDDBDAO;
 import es.uvigo.esei.dai.hybridserver.model.XSLTDBDAO;
+import es.uvigo.esei.dai.hybridserver.webservice.ControllerService;
+import jakarta.xml.ws.Endpoint;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -53,7 +55,7 @@ public class HybridServer implements AutoCloseable {
 	private XSLTController xsltController;
 
 	private Configuration configuration=null;
-	//private Endpoint endPoint=null;
+	private Endpoint endPoint=null;
 
     public HybridServer() {
         this.servicePort = 8888;
@@ -110,6 +112,15 @@ public class HybridServer implements AutoCloseable {
 		public void run() {
 			try (final ServerSocket serverSocket = new ServerSocket(servicePort)) {
 				threadPool = Executors.newFixedThreadPool(maxClients);
+				
+				try {
+					String url = configuration.getWebServiceURL();
+					endPoint = Endpoint.publish(url, new ControllerService(configuration.getDbURL(),
+							configuration.getDbPassword(), configuration.getDbUser()));
+					endPoint.setExecutor(threadPool);
+				}catch(IllegalArgumentException | NullPointerException ex) {
+				
+				
 				while (true) {
 					try {
 						Socket clientSocket = serverSocket.accept();
@@ -136,6 +147,9 @@ public class HybridServer implements AutoCloseable {
   	@Override
   	public void close() {
 	  	this.stop = true;
+	  	
+		if(endPoint!=null)
+			endPoint.stop();
 
     	try (Socket socket = new Socket("localhost", servicePort)) {
     	// Esta conexión se hace, simplemente, para "despertar" el hilo servidor
