@@ -31,7 +31,6 @@ public class XMLConfigurationLoader {
 	public Configuration load(Reader reader) throws Exception {
         // Crear el handler para procesar la configuración
         ConfigurationContentHandler handler = new ConfigurationContentHandler();
-		System.out.println("1111111111111111111");
 
         // Primero validamos y parseamos el XML con el XSD
         try {

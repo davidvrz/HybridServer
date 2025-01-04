@@ -1,8 +1,8 @@
 package es.uvigo.esei.dai.hybridserver.webservice;
 
 import java.util.List;
-import java.util.List;
 
+import es.uvigo.esei.dai.hybridserver.ServerConfiguration;
 import es.uvigo.esei.dai.hybridserver.model.HTMLDBDAO;
 import es.uvigo.esei.dai.hybridserver.model.XMLDBDAO;
 import es.uvigo.esei.dai.hybridserver.model.XSDDBDAO;
@@ -10,21 +10,14 @@ import es.uvigo.esei.dai.hybridserver.model.XSLTDBDAO;
 import jakarta.jws.WebService;
 
 
-
-
 @WebService(
-		endpointInterface = "es.uvigo.esei.dai.webservice.WebServiceInterface",
+		endpointInterface = "es.uvigo.esei.dai.webservice.DocumentService",
 		serviceName = "HybridServerService",
 		targetNamespace = "http://hybridserver.dai.esei.uvigo.es/"
 )
-public class ControllerService implements WebServiceInterface {
-
-	String DB_URL, DB_PASSWORD, DB_USER;
-	
-	public ControllerService (String DB_URL, String DB_PASSWORD, String DB_USER) {
-		this.DB_URL = DB_URL;
-		this.DB_PASSWORD = DB_PASSWORD;
-		this.DB_USER = DB_USER;
+public class DocumentServiceImpl implements DocumentService {
+	 
+	public DocumentServiceImpl () {
 	}
 
 	public List<String> getHtmlUuids() {

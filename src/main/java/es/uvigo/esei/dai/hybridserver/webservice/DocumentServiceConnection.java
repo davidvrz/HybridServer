@@ -8,11 +8,11 @@ import javax.xml.namespace.QName;
 import jakarta.xml.ws.Service;
 
 
-public class WebServiceConnection {
+public class DocumentServiceConnection {
 
 	private String name, wsdl, namespace, service, httpAddress;
 
-	public WebServiceConnection(String name, String wsdl, String namespace, String service, String httpAddress) {
+	public DocumentServiceConnection(String name, String wsdl, String namespace, String service, String httpAddress) {
 		this.name = name;
 		this.wsdl = wsdl;
 		this.namespace = namespace;
@@ -21,19 +21,19 @@ public class WebServiceConnection {
 		
 	}
 
-	public WebServiceInterface setConnection() {
-		WebServiceInterface ws= null;
+	public DocumentService setConnection() {
+		DocumentService webservice= null;
 		try {
 			URL url = new URL(wsdl);
 			QName name = new QName(namespace, service);
 
-			Service servicio = Service.create(url, name);
-			ws = servicio.getPort(WebServiceInterface.class);
+			Service service = Service.create(url, name);
+			webservice = service.getPort(DocumentService.class);
 
 		} catch (MalformedURLException e) {
-			e.getMessage();
+			 System.err.println("Error setting connection: " + e.getMessage());
 		}
-		return ws;
+		return webservice;
 	}
 
 }

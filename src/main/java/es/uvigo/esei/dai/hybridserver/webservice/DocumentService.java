@@ -9,7 +9,7 @@ import jakarta.jws.WebService;
 
 
 @WebService
-public interface WebServiceInterface {
+public interface DocumentService {
 
 	@WebMethod
 	public List<String> getHtmlUuids();

@@ -12,8 +12,8 @@ import es.uvigo.esei.dai.hybridserver.http.HTTPResponseStatus;
 import es.uvigo.esei.dai.hybridserver.http.MIME;
 import es.uvigo.esei.dai.hybridserver.model.XSDDAO;
 import es.uvigo.esei.dai.hybridserver.model.XSLTDAO;
-import es.uvigo.esei.dai.hybridserver.webservice.WebServiceConnection;
-import es.uvigo.esei.dai.hybridserver.webservice.WebServiceInterface;
+import es.uvigo.esei.dai.hybridserver.webservice.DocumentServiceConnection;
+import es.uvigo.esei.dai.hybridserver.webservice.DocumentService;
 import jakarta.xml.ws.WebServiceException;
 
 public class XSLTController {
@@ -159,14 +159,14 @@ public class XSLTController {
         if (listServers != null) {
             for (ServerConfiguration serverConfig : listServers) {
                 try {
-                    WebServiceConnection wsc = new WebServiceConnection(
+                    DocumentServiceConnection wsc = new DocumentServiceConnection(
                         serverConfig.getName(),
                         serverConfig.getWsdl(),
                         serverConfig.getNamespace(),
                         serverConfig.getService(),
                         serverConfig.getHttpAddress()
                     );
-                    WebServiceInterface ws = wsc.setConnection();
+                    DocumentService ws = wsc.setConnection();
                     if (ws.getXsltUuids().contains(uuid)) {
                         return ws.getXsltContent(uuid);
                     }

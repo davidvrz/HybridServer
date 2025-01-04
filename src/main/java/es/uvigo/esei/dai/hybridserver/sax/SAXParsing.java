@@ -23,7 +23,6 @@ public class SAXParsing {
 	public static void parseAndValidateWithExternalXSD(Reader reader, String schemaPath, ContentHandler handler)
 	        throws ParserConfigurationException, SAXException, IOException {
 
-		System.out.println("Cargando el archivo XSD desde: " + schemaPath);
 		// Construcción del schema
 	    final SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
 	    final Schema schema = schemaFactory.newSchema(new File(schemaPath));
@@ -41,12 +40,8 @@ public class SAXParsing {
 	    xmlReader.setContentHandler(handler);
 	    xmlReader.setErrorHandler(new SimpleErrorHandler());
 	    
-		System.out.println("2222222222222222222222222222222222");
-
 	    // Parsing
 	    xmlReader.parse(new InputSource(reader));
-		System.out.println("3333333333333333333333333333");
-
 	}
 
   

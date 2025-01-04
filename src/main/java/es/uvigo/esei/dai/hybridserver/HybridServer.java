@@ -26,14 +26,14 @@ import es.uvigo.esei.dai.hybridserver.model.HTMLDBDAO;
 import es.uvigo.esei.dai.hybridserver.model.XMLDBDAO;
 import es.uvigo.esei.dai.hybridserver.model.XSDDBDAO;
 import es.uvigo.esei.dai.hybridserver.model.XSLTDBDAO;
-import es.uvigo.esei.dai.hybridserver.webservice.ControllerService;
+import es.uvigo.esei.dai.hybridserver.webservice.DocumentServiceImpl;
+
 import jakarta.xml.ws.Endpoint;
 
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -57,7 +57,7 @@ public class HybridServer implements AutoCloseable {
 
 	private Configuration configuration=null;
 	private Endpoint endPoint=null;
-	List<ServerConfiguration> listServers;
+	List<ServerConfiguration> listServers=null;
 
     public HybridServer() {
         this.servicePort = 8888;
@@ -88,16 +88,14 @@ public class HybridServer implements AutoCloseable {
 	}
 	
 	public HybridServer(Configuration configuration) {
-		System.out.println("55555555555555");
 		this.configuration = configuration;
-		System.out.println(configuration);
-
+		
 		this.servicePort = configuration.getHttpPort();
 		this.maxClients = configuration.getNumClients();
 		dbUrl = configuration.getDbURL();
 		dbUser = configuration.getDbUser();
 		dbPassword = configuration.getDbPassword();
-		System.out.println("666666666666666");
+		List<ServerConfiguration> listServers = configuration.getServers();
 
 		JDBCConnection.initialize(dbUrl, dbUser, dbPassword);
 		htmlController = new HTMLController(new HTMLDBDAO(), listServers);
@@ -119,22 +117,20 @@ public class HybridServer implements AutoCloseable {
 				threadPool = Executors.newFixedThreadPool(maxClients);
 				try {
 					String url = configuration.getWebServiceURL();
-					endPoint = Endpoint.publish(url, new ControllerService(configuration.getDbURL(),
-							configuration.getDbPassword(), configuration.getDbUser()));
+					endPoint = Endpoint.publish(url, new DocumentServiceImpl());
 					endPoint.setExecutor(threadPool);
 				}catch(IllegalArgumentException | NullPointerException ex) {
-					
+					ex.printStackTrace();
 				}
 				while (true) {
 					try {
 						Socket clientSocket = serverSocket.accept();
 						if (stop)
 							break;
-
-						threadPool.execute(new HybridServerThread(clientSocket, htmlController, xmlController, xsdController, xsltController));
 						
+							threadPool.execute(new HybridServerThread(clientSocket, htmlController, xmlController, xsdController, xsltController));
 					} catch (IOException e) {
-                        e.printStackTrace();
+						
 					}
 				}
 			} catch (IOException e) {

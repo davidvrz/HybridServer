@@ -11,9 +11,9 @@ import es.uvigo.esei.dai.hybridserver.http.HTTPResponse;
 import es.uvigo.esei.dai.hybridserver.http.HTTPResponseStatus;
 import es.uvigo.esei.dai.hybridserver.http.MIME;
 import es.uvigo.esei.dai.hybridserver.model.HTMLDAO;
-import es.uvigo.esei.dai.hybridserver.webservice.WebServiceConnection;
-import es.uvigo.esei.dai.hybridserver.webservice.WebServiceInterface;
-import jakarta.xml.ws.WebServiceException;
+import es.uvigo.esei.dai.hybridserver.webservice.DocumentServiceUtils;
+import es.uvigo.esei.dai.hybridserver.webservice.ServerConnection;
+import es.uvigo.esei.dai.hybridserver.webservice.DocumentService;
 
 public class HTMLController {
     private HTMLDAO htmlDAO;
@@ -128,41 +128,78 @@ public class HTMLController {
     }
 
     private String generateHtmlPageHome(int port) {
-        StringBuilder stringBuilder = new StringBuilder("<!DOCTYPE html>" + "<html lang='es'>" 
-        		+ "<head>" + "  <meta charset='utf-8'/>" + "  <title>Hybrid Server</title>" 
-        		+ "</head>" + "<body>" + "<h1>Hybrid Server</h1>" + "<ul>");
+        StringBuilder stringBuilder = new StringBuilder("<!DOCTYPE html>" +
+            "<html lang='es'>" +
+            "<head>" +
+            "  <meta charset='utf-8'/>" +
+            "  <title>Hybrid Server</title>" +
+            "</head>" +
+            "<body>" +
+            "<h1>Hybrid Server</h1>" +
+            "<h2>Local Server</h2>" +
+            "<ul>");
 
+        // Mostrar los documentos locales
         for (String documentUUID : htmlDAO.listDocuments()) {
-        	stringBuilder.append("<li>UUID: <a href='http://localhost:" + port + "/html?uuid=" + documentUUID + "'>" + documentUUID + "</a></li>");
+            stringBuilder.append("<li>UUID: <a href='http://localhost:" + port + "/html?uuid=" + documentUUID + "'>" + documentUUID + "</a></li>");
         }
-        
+
+        // Ahora buscamos los documentos remotos, conectamos a los servidores remotos y obtenemos los UUIDs
+        if (listServers != null) {
+            List<ServerConnection> remoteConnections = DocumentServiceUtils.getConnections(listServers);
+
+            for (ServerConnection serverConnection : remoteConnections) {
+                ServerConfiguration config = serverConnection.getConfiguration();
+                DocumentService connection = serverConnection.getConnection();
+
+                stringBuilder.append("<h2>Servidor: " + config.getName() + "</h2><ul>");
+
+                try {
+                    List<String> uuidsHtml = connection.getHtmlUuids(); // Obtener los UUIDs de documentos remotos
+
+                    for (String uuidHtml : uuidsHtml) {
+                        stringBuilder.append("<li>UUID: <a href='" + config.getHttpAddress() + "/html?uuid=" + uuidHtml + "'>" + uuidHtml + "</a></li>");
+                    }
+                } catch (Exception e) {
+                    stringBuilder.append("<li>Error al obtener documentos de " + config.getName() + "</li>");
+                }
+
+                stringBuilder.append("</ul>");
+            }
+        }
+
         stringBuilder.append("</ul>");
-        stringBuilder.append("<h2>Añadir nueva página</h2>" + "<form action='/html' method='POST'>" + "<textarea name='html'></textarea>" + "<button type='submit'>Submit</button>" + "</form>" + "</body></html>");
-        stringBuilder.append("</body>" + "</html>");
-        
+        stringBuilder.append("<h2>Añadir nueva página</h2>" +
+            "<form action='/html' method='POST'>" +
+            "<textarea name='html'></textarea>" +
+            "<button type='submit'>Submit</button>" +
+            "</form>" +
+            "</body>" +
+            "</html>");
+
         return stringBuilder.toString();
     }
+
     
-    public String fetchContentFromOtherServers(String uuid) {
-		if (listServers != null) {
-            for (ServerConfiguration serverConfig : listServers) {
+    private String fetchContentFromOtherServers(String uuid) {
+        if (listServers != null) {
+            // Llamamos a los servidores remotos para obtener el contenido del documento
+            List<ServerConnection> connections = DocumentServiceUtils.getConnections(listServers);
+
+            for (ServerConnection serverConnection : connections) {
+                DocumentService connection = serverConnection.getConnection();
+
                 try {
-                    WebServiceConnection wsc = new WebServiceConnection(
-                        serverConfig.getName(),
-                        serverConfig.getWsdl(),
-                        serverConfig.getNamespace(),
-                        serverConfig.getService(),
-                        serverConfig.getHttpAddress()
-                    );
-                    WebServiceInterface ws = wsc.setConnection();
-                    if (ws.getHtmlUuids().contains(uuid)) {
-                        return ws.getHtmlContent(uuid);
+                    if (connection.getHtmlUuids().contains(uuid)) {
+                        return connection.getHtmlContent(uuid);
                     }
-                } catch (WebServiceException e) {
-                    System.out.println("Failed to connect to server: " + serverConfig.getName());
+                } catch (Exception e) {
+                    System.err.println("Error al obtener contenido del servidor: " + serverConnection.getConfiguration().getName());
                 }
             }
         }
+
         return null;
     }
+
 }

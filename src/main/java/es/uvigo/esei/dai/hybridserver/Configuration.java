@@ -103,4 +103,25 @@ public class Configuration {
   public void setServers(List<ServerConfiguration> servers) {
     this.servers = servers;
   }
+  
+  @Override
+  public String toString() {
+      StringBuilder serversString = new StringBuilder();
+      for (ServerConfiguration server : servers) {
+          serversString.append(server.toString()).append(", ");
+      }
+      if (!servers.isEmpty()) {
+          serversString.setLength(serversString.length() - 2); // Eliminar la última coma y espacio
+      }
+
+      return "Configuration{" +
+             "httpPort=" + httpPort +
+             ", numClients=" + numClients +
+             ", webServiceURL='" + webServiceURL + '\'' +
+             ", dbUser='" + dbUser + '\'' +
+             ", dbPassword='" + dbPassword + '\'' +
+             ", dbURL='" + dbURL + '\'' +
+             ", servers=[" + serversString +
+             "]}";
+  }
 }

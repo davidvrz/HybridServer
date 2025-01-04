@@ -4,9 +4,9 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://www.esei.uvigo.es/dai/hybridserver configuration.xsd">
 	<connections>
-		<http>10000</http>
+		<http>8888</http>
 		<webservice>http://localhost:20000/hybridserver</webservice>
-		<numClients>15</numClients>
+		<numClients>50</numClients>
 	</connections>
 	
 	<database>
