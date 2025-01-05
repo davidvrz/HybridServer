@@ -22,18 +22,18 @@ public class DocumentServiceConnection {
 	}
 
 	public DocumentService setConnection() {
-		DocumentService webservice= null;
+		DocumentService ds= null;
 		try {
 			URL url = new URL(wsdl);
 			QName name = new QName(namespace, service);
 
 			Service service = Service.create(url, name);
-			webservice = service.getPort(DocumentService.class);
+			ds = service.getPort(DocumentService.class);
 
 		} catch (MalformedURLException e) {
 			 System.err.println("Error setting connection: " + e.getMessage());
 		}
-		return webservice;
+		return ds;
 	}
 
 }

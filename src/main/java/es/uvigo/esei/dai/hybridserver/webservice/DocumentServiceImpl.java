@@ -2,7 +2,6 @@ package es.uvigo.esei.dai.hybridserver.webservice;
 
 import java.util.List;
 
-import es.uvigo.esei.dai.hybridserver.ServerConfiguration;
 import es.uvigo.esei.dai.hybridserver.model.HTMLDBDAO;
 import es.uvigo.esei.dai.hybridserver.model.XMLDBDAO;
 import es.uvigo.esei.dai.hybridserver.model.XSDDBDAO;
@@ -11,7 +10,7 @@ import jakarta.jws.WebService;
 
 
 @WebService(
-		endpointInterface = "es.uvigo.esei.dai.webservice.DocumentService",
+		endpointInterface = "es.uvigo.esei.dai.hybridserver.webservice.DocumentService",
 		serviceName = "HybridServerService",
 		targetNamespace = "http://hybridserver.dai.esei.uvigo.es/"
 )

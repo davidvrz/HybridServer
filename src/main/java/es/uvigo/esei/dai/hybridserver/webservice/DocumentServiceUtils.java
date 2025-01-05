@@ -27,6 +27,7 @@ public class DocumentServiceUtils {
 	            }
 	        } catch (WebServiceException e) {
 	            System.out.println("No se pudo conectar al servidor: " + serverConfiguration.getName());
+	            e.printStackTrace(); 
 	        }
 	    }
 
