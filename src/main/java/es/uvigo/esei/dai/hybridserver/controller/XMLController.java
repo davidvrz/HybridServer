@@ -21,8 +21,8 @@ import es.uvigo.esei.dai.hybridserver.model.XSDDAO;
 import es.uvigo.esei.dai.hybridserver.model.XSLTDAO;
 import es.uvigo.esei.dai.hybridserver.sax.SAXParsing;
 import es.uvigo.esei.dai.hybridserver.sax.XSLUtils;
-import es.uvigo.esei.dai.hybridserver.webservice.DocumentServiceConnection;
-import es.uvigo.esei.dai.hybridserver.webservice.DocumentService;
+import es.uvigo.esei.dai.hybridserver.webservice.HybridServerServiceConnection;
+import es.uvigo.esei.dai.hybridserver.webservice.HybridServerService;
 import jakarta.xml.ws.WebServiceException;
 
 public class XMLController {
@@ -227,14 +227,14 @@ public class XMLController {
         if (listServers != null) {
             for (ServerConfiguration serverConfig : listServers) {
                 try {
-                    DocumentServiceConnection wsc = new DocumentServiceConnection(
+                    HybridServerServiceConnection wsc = new HybridServerServiceConnection(
                         serverConfig.getName(),
                         serverConfig.getWsdl(),
                         serverConfig.getNamespace(),
                         serverConfig.getService(),
                         serverConfig.getHttpAddress()
                     );
-                    DocumentService ws = wsc.setConnection();
+                    HybridServerService ws = wsc.setConnection();
 
                     switch (type) {
                         case "XSLT":

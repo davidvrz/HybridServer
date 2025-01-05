@@ -2,14 +2,13 @@ package es.uvigo.esei.dai.hybridserver.webservice;
 
 
 import java.util.List;
-import java.util.Set;
 
 import jakarta.jws.WebMethod;
 import jakarta.jws.WebService;
 
 
 @WebService
-public interface DocumentService {
+public interface HybridServerService {
 
 	@WebMethod
 	public List<String> getHtmlUuids();

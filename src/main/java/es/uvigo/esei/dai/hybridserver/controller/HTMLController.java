@@ -11,9 +11,9 @@ import es.uvigo.esei.dai.hybridserver.http.HTTPResponse;
 import es.uvigo.esei.dai.hybridserver.http.HTTPResponseStatus;
 import es.uvigo.esei.dai.hybridserver.http.MIME;
 import es.uvigo.esei.dai.hybridserver.model.HTMLDAO;
-import es.uvigo.esei.dai.hybridserver.webservice.DocumentServiceUtils;
+import es.uvigo.esei.dai.hybridserver.webservice.HybridServerServiceUtils;
 import es.uvigo.esei.dai.hybridserver.webservice.ServerConnection;
-import es.uvigo.esei.dai.hybridserver.webservice.DocumentService;
+import es.uvigo.esei.dai.hybridserver.webservice.HybridServerService;
 
 public class HTMLController {
     private HTMLDAO htmlDAO;
@@ -140,28 +140,30 @@ public class HTMLController {
             "<ul>");
 
         // Mostrar los documentos locales
-        for (String documentUUID : htmlDAO.listDocuments()) {
-            stringBuilder.append("<li>UUID: <a href='http://localhost:" + port + "/html?uuid=" + documentUUID + "'>" + documentUUID + "</a></li>");
+        for (String uuidHtml : htmlDAO.listDocuments()) {
+            stringBuilder.append("<li>UUID: <a href='http://localhost:" + port + "/html?uuid=" + uuidHtml + "'>" + uuidHtml + "</a></li>");
         }
 
         // Ahora buscamos los documentos remotos, conectamos a los servidores remotos y obtenemos los UUIDs
         if (listServers != null) {
-            List<ServerConnection> remoteConnections = DocumentServiceUtils.getConnections(listServers);
+            List<ServerConnection> remoteConnections = HybridServerServiceUtils.getConnections(listServers);
 
             for (ServerConnection serverConnection : remoteConnections) {
                 ServerConfiguration config = serverConnection.getConfiguration();
-                DocumentService connection = serverConnection.getConnection();
+                HybridServerService connection = serverConnection.getConnection();
 
                 stringBuilder.append("<h2>Servidor: " + config.getName() + "</h2><ul>");
 
                 try {
                     List<String> uuidsHtml = connection.getHtmlUuids(); // Obtener los UUIDs de documentos remotos
+                    System.out.println("UUIDs obtenidos de " + config.getName() + ": " + uuidsHtml);
 
                     for (String uuidHtml : uuidsHtml) {
-                        stringBuilder.append("<li>UUID: <a href='" + config.getHttpAddress() + "/html?uuid=" + uuidHtml + "'>" + uuidHtml + "</a></li>");
+                        stringBuilder.append("<li>UUID: <a href='" + config.getHttpAddress() + "html?uuid=" + uuidHtml + "'>" + uuidHtml + "</a></li>");
                     }
                 } catch (Exception e) {
                     stringBuilder.append("<li>Error al obtener documentos de " + config.getName() + "</li>");
+                    e.printStackTrace();
                 }
 
                 stringBuilder.append("</ul>");
@@ -184,10 +186,10 @@ public class HTMLController {
     private String fetchContentFromOtherServers(String uuid) {
         if (listServers != null) {
             // Llamamos a los servidores remotos para obtener el contenido del documento
-            List<ServerConnection> connections = DocumentServiceUtils.getConnections(listServers);
+            List<ServerConnection> connections = HybridServerServiceUtils.getConnections(listServers);
 
             for (ServerConnection serverConnection : connections) {
-                DocumentService connection = serverConnection.getConnection();
+                HybridServerService connection = serverConnection.getConnection();
 
                 try {
                     if (connection.getHtmlUuids().contains(uuid)) {

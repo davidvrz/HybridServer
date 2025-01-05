@@ -10,14 +10,11 @@ import jakarta.jws.WebService;
 
 
 @WebService(
-		endpointInterface = "es.uvigo.esei.dai.hybridserver.webservice.DocumentService",
+		endpointInterface = "es.uvigo.esei.dai.hybridserver.webservice.HybridServerService",
 		serviceName = "HybridServerService",
 		targetNamespace = "http://hybridserver.dai.esei.uvigo.es/"
 )
-public class DocumentServiceImpl implements DocumentService {
-	 
-	public DocumentServiceImpl () {
-	}
+public class HybridServerServiceImpl implements HybridServerService {
 
 	public List<String> getHtmlUuids() {
 		HTMLDBDAO dbDao = new HTMLDBDAO();

@@ -58,21 +58,21 @@ public class XMLConfigurationLoaderTest {
 			assertThat(server.getName(), is(equalTo("Server 2")));
 			assertThat(server.getWsdl(), is(equalTo("http://localhost:20001/hs?wsdl")));
 			assertThat(server.getNamespace(), is(equalTo("http://hybridserver.dai.esei.uvigo.es/")));
-			assertThat(server.getService(), is(equalTo("DocumentServiceImpl")));
+			assertThat(server.getService(), is(equalTo("HybridServerServiceImpl")));
 			assertThat(server.getHttpAddress(), is(equalTo("http://localhost:10001/")));
 
 			server = configuration.getServers().get(1);
 			assertThat(server.getName(), is(equalTo("Server 3")));
 			assertThat(server.getWsdl(), is(equalTo("http://localhost:20002/hs?wsdl")));
 			assertThat(server.getNamespace(), is(equalTo("http://hybridserver.dai.esei.uvigo.es/")));
-			assertThat(server.getService(), is(equalTo("DocumentServiceImpl")));
+			assertThat(server.getService(), is(equalTo("HybridServerServiceImpl")));
 			assertThat(server.getHttpAddress(), is(equalTo("http://localhost:10002/")));
 
 			server = configuration.getServers().get(2);
 			assertThat(server.getName(), is(equalTo("Server 4")));
 			assertThat(server.getWsdl(), is(equalTo("http://localhost:20003/hs?wsdl")));
 			assertThat(server.getNamespace(), is(equalTo("http://hybridserver.dai.esei.uvigo.es/")));
-			assertThat(server.getService(), is(equalTo("DocumentServiceImpl")));
+			assertThat(server.getService(), is(equalTo("HybridServerServiceImpl")));
 			assertThat(server.getHttpAddress(), is(equalTo("http://localhost:10003/")));
 		}
 	}
