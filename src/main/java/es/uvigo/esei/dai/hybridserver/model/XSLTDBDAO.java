@@ -9,11 +9,19 @@ import es.uvigo.esei.dai.hybridserver.config.JDBCException;
 
 public class XSLTDBDAO implements XSLTDAO {
 
+	String DB_URL, DB_PASSWORD, DB_USER;
+
+	public XSLTDBDAO(String dbUrl, String dbUser, String dbPassword) {
+		this.DB_URL = dbUrl;
+		this.DB_USER = dbUser;
+		this.DB_PASSWORD = dbPassword;
+	}
+	
     @Override
     public void addStylesheet(String uuid, String xslt, String xsd) {
         String query = "INSERT INTO XSLT (uuid, content, xsd) VALUES (?, ?, ?)";
         
-        try (Connection connection = JDBCConnection.getConnection();
+        try (Connection connection = JDBCConnection.getConnection(DB_URL, DB_USER, DB_PASSWORD);
              PreparedStatement statement = connection.prepareStatement(query)) {
 
             statement.setString(1, uuid);
@@ -31,7 +39,7 @@ public class XSLTDBDAO implements XSLTDAO {
         boolean contains = false;
 
         String query = "SELECT `uuid` FROM XSLT WHERE `uuid`=?";
-        try (Connection connection = JDBCConnection.getConnection();
+        try (Connection connection = JDBCConnection.getConnection(DB_URL, DB_USER, DB_PASSWORD);
              PreparedStatement statement = connection.prepareStatement(query)) {
                 
             statement.setString(1, uuid);
@@ -52,7 +60,7 @@ public class XSLTDBDAO implements XSLTDAO {
     public void deleteStylesheet(String uuid) {
         String query = "DELETE FROM XSLT WHERE uuid = ?";
 
-        try (Connection connection = JDBCConnection.getConnection();
+        try (Connection connection = JDBCConnection.getConnection(DB_URL, DB_USER, DB_PASSWORD);
              PreparedStatement statement = connection.prepareStatement(query)) {
 
             statement.setString(1, uuid);
@@ -66,7 +74,7 @@ public class XSLTDBDAO implements XSLTDAO {
     public String getStylesheet(String uuid) {
         String query = "SELECT content FROM XSLT WHERE uuid = ?";
 
-        try (Connection connection = JDBCConnection.getConnection();
+        try (Connection connection = JDBCConnection.getConnection(DB_URL, DB_USER, DB_PASSWORD);
              PreparedStatement statement = connection.prepareStatement(query)) {
                 
         	 statement.setString(1, uuid);
@@ -87,7 +95,7 @@ public class XSLTDBDAO implements XSLTDAO {
         List<String> stylesheets = new ArrayList<>();
         String query = "SELECT uuid FROM XSLT";
 
-        try (Connection connection = JDBCConnection.getConnection();
+        try (Connection connection = JDBCConnection.getConnection(DB_URL, DB_USER, DB_PASSWORD);
              PreparedStatement statement = connection.prepareStatement(query);
              ResultSet result = statement.executeQuery()) {
 
@@ -106,7 +114,7 @@ public class XSLTDBDAO implements XSLTDAO {
     public String getXsd(String uuid) {
         String query = "SELECT xsd FROM XSLT WHERE uuid = ?";
 
-        try (Connection connection = JDBCConnection.getConnection();
+        try (Connection connection = JDBCConnection.getConnection(DB_URL, DB_USER, DB_PASSWORD);
              PreparedStatement statement = connection.prepareStatement(query)) {
                 
             statement.setString(1, uuid);

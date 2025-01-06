@@ -22,7 +22,6 @@ public class HybridServerServiceUtils {
 	            );
 
 	            HybridServerService connection = wsc.setConnection();
-	            System.out.println("Conexión " + connection.hashCode() + " para el servidor " + serverConfiguration.getName());
 	           
 	            serverConnections.add(new ServerConnection(serverConfiguration, connection));
 	            

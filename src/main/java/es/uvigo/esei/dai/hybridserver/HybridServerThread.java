@@ -36,8 +36,9 @@ public class HybridServerThread implements Runnable {
     @Override
     public void run() {
     	int port = socket.getLocalPort();
-    	try (BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-    			OutputStream output = socket.getOutputStream()) {
+    	try (Socket socket = this.socket;
+    		BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+    		OutputStream output = socket.getOutputStream()) {
     			
     		HTTPRequest request = new HTTPRequest(reader);
 		    HTTPResponse response = new HTTPResponse();

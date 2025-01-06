@@ -68,11 +68,10 @@ public class HybridServer implements AutoCloseable {
         dbUser = "hsdb";
         dbPassword = "hsdbpass";
         
-        JDBCConnection.initialize(dbUrl, dbUser, dbPassword);
-        htmlController = new HTMLController(new HTMLDBDAO(), listServers);
-        xmlController = new XMLController(new XMLDBDAO(), new XSDDBDAO(), new XSLTDBDAO(),listServers);
-        xsdController = new XSDController(new XSDDBDAO(),listServers);
-        xsltController = new XSLTController(new XSLTDBDAO(), new XSDDBDAO(),listServers);
+        htmlController = new HTMLController(new HTMLDBDAO(dbUrl, dbUser, dbPassword), listServers);
+        xmlController = new XMLController(new XMLDBDAO(dbUrl, dbUser, dbPassword), new XSDDBDAO(dbUrl, dbUser, dbPassword), new XSLTDBDAO(dbUrl, dbUser, dbPassword),listServers);
+        xsdController = new XSDController(new XSDDBDAO(dbUrl, dbUser, dbPassword),listServers);
+        xsltController = new XSLTController(new XSLTDBDAO(dbUrl, dbUser, dbPassword), new XSDDBDAO(dbUrl, dbUser, dbPassword),listServers);
     }
 	
 	public HybridServer(Properties properties) {
@@ -82,11 +81,10 @@ public class HybridServer implements AutoCloseable {
         dbUser = properties.getProperty("db.user");
         dbPassword = properties.getProperty("db.password");
         
-        JDBCConnection.initialize(dbUrl, dbUser, dbPassword);
-        htmlController = new HTMLController(new HTMLDBDAO(), listServers);
-        xmlController = new XMLController(new XMLDBDAO(), new XSDDBDAO(), new XSLTDBDAO(), listServers);
-        xsdController = new XSDController(new XSDDBDAO(), listServers);
-        xsltController = new XSLTController(new XSLTDBDAO(), new XSDDBDAO(), listServers);
+        htmlController = new HTMLController(new HTMLDBDAO(dbUrl, dbUser, dbPassword), listServers);
+        xmlController = new XMLController(new XMLDBDAO(dbUrl, dbUser, dbPassword), new XSDDBDAO(dbUrl, dbUser, dbPassword), new XSLTDBDAO(dbUrl, dbUser, dbPassword), listServers);
+        xsdController = new XSDController(new XSDDBDAO(dbUrl, dbUser, dbPassword), listServers);
+        xsltController = new XSLTController(new XSLTDBDAO(dbUrl, dbUser, dbPassword), new XSDDBDAO(dbUrl, dbUser, dbPassword), listServers);
 	}
 	
 	public HybridServer(Configuration configuration) {
@@ -99,11 +97,10 @@ public class HybridServer implements AutoCloseable {
 		dbPassword = configuration.getDbPassword();
 		List<ServerConfiguration> listServers = configuration.getServers();
 
-		JDBCConnection.initialize(dbUrl, dbUser, dbPassword);
-		htmlController = new HTMLController(new HTMLDBDAO(), listServers);
-		xmlController = new XMLController(new XMLDBDAO(), new XSDDBDAO(), new XSLTDBDAO(), listServers);
-		xsdController = new XSDController(new XSDDBDAO(), listServers);
-		xsltController = new XSLTController(new XSLTDBDAO(), new XSDDBDAO(), listServers);
+		htmlController = new HTMLController(new HTMLDBDAO(dbUrl, dbUser, dbPassword), listServers);
+		xmlController = new XMLController(new XMLDBDAO(dbUrl, dbUser, dbPassword), new XSDDBDAO(dbUrl, dbUser, dbPassword), new XSLTDBDAO(dbUrl, dbUser, dbPassword), listServers);
+		xsdController = new XSDController(new XSDDBDAO(dbUrl, dbUser, dbPassword), listServers);
+		xsltController = new XSLTController(new XSLTDBDAO(dbUrl, dbUser, dbPassword), new XSDDBDAO(dbUrl, dbUser, dbPassword), listServers);
 
 	}
 	
@@ -119,7 +116,7 @@ public class HybridServer implements AutoCloseable {
 				threadPool = Executors.newFixedThreadPool(maxClients);
 				try {
 					String url = configuration.getWebServiceURL();
-					hybridServerServiceImpl = new HybridServerServiceImpl();
+					hybridServerServiceImpl = new HybridServerServiceImpl(dbUrl, dbUser, dbPassword);
 					endPoint = Endpoint.publish(url, hybridServerServiceImpl);
 					endPoint.setExecutor(threadPool);
 				}catch(IllegalArgumentException | NullPointerException ex) {
@@ -149,33 +146,44 @@ public class HybridServer implements AutoCloseable {
   
   	@Override
   	public void close() {
-	  	this.stop = true;
-	  	
-		if(endPoint!=null) {
-			endPoint.stop();
-		}
-		
+  	    this.stop = true;
 
-    	try (Socket socket = new Socket("localhost", servicePort)) {
-    	// Esta conexión se hace, simplemente, para "despertar" el hilo servidor
-    	} catch (IOException e) {
-    		throw new RuntimeException(e);
-    	}
+  	    if (endPoint != null) {
+  	    	try {
+              	System.out.println("Deteniendo servicio web...");
+              	endPoint.stop(); 
+              	endPoint = null;  
+          	} catch (Exception e) {
+              	e.printStackTrace();
+          	}
+  	    }
+  	    
+	  	try {
+	        Thread.sleep(10);  // Pausa para permitir que se cierre el servicio antes de intentar crear otro en la misma url
+	    } catch (InterruptedException e) {
+	        e.printStackTrace();
+	    }
 
-    	try {
-    		this.serverThread.join();
-    	} catch (InterruptedException e) {
-    		throw new RuntimeException(e);
-    	}
+  	    // "Despertar" el hilo servidor para que finalice
+  	    try (Socket socket = new Socket("localhost", servicePort)) {
+  	    } catch (IOException e) {
+  	        throw new RuntimeException(e);
+  	    }
 
-    	threadPool.shutdownNow();
+  	    try {
+  	        this.serverThread.join();
+  	    } catch (InterruptedException e) {
+  	        throw new RuntimeException(e);
+  	    }
 
-    	try {
-    	  threadPool.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);
-    	} catch (InterruptedException e) {
-    	  e.printStackTrace();
-    	}
-
+  	    // Detener el pool de hilos
+  	    threadPool.shutdownNow();
+  	    try {
+  	        threadPool.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);
+  	    } catch (InterruptedException e) {
+  	        e.printStackTrace();
+  	    }
   	}
+
 }
 

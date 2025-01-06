@@ -5,18 +5,13 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class JDBCConnection {
-	private static String url;
-    private static String user;
-    private static String password;
 
-    public static void initialize(String dbUrl, String dbUser, String dbPassword) {
-        url = dbUrl;
-        user = dbUser;
-        password = dbPassword;
+    public static Connection getConnection(String url, String user, String password) throws SQLException {
+    	try {
+			Class.forName("com.mysql.cj.jdbc.Driver");
+		} catch (ClassNotFoundException e) {
+            throw new SQLException("No se pudo cargar el controlador JDBC", e);
+		}
+        return DriverManager.getConnection(url, user, password);
     }
-
-    public static Connection getConnection() throws SQLException {
-    	return DriverManager.getConnection(url, user, password);
-    }
-    
 }

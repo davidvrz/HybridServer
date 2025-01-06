@@ -1,4 +1,4 @@
-package es.uvigo.esei.dai.hybridserver.controller;
+	package es.uvigo.esei.dai.hybridserver.controller;
 
 import java.util.List;
 import java.util.UUID;
@@ -33,7 +33,7 @@ public class HTMLController {
                     response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
                     response.setContent(documentContent);
                 } else {
-                    String remoteContent = fetchContentFromOtherServers(uuid);
+                    String remoteContent = fetchHtml(uuid);
                     if (remoteContent != null) {
                         response.setStatus(HTTPResponseStatus.S200);
                         response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
@@ -146,6 +146,7 @@ public class HTMLController {
 
         // Ahora buscamos los documentos remotos, conectamos a los servidores remotos y obtenemos los UUIDs
         if (listServers != null) {
+        	
             List<ServerConnection> remoteConnections = HybridServerServiceUtils.getConnections(listServers);
 
             for (ServerConnection serverConnection : remoteConnections) {
@@ -156,14 +157,12 @@ public class HTMLController {
 
                 try {
                     List<String> uuidsHtml = connection.getHtmlUuids(); // Obtener los UUIDs de documentos remotos
-                    System.out.println("UUIDs obtenidos de " + config.getName() + ": " + uuidsHtml);
-
+                    
                     for (String uuidHtml : uuidsHtml) {
                         stringBuilder.append("<li>UUID: <a href='" + config.getHttpAddress() + "html?uuid=" + uuidHtml + "'>" + uuidHtml + "</a></li>");
                     }
                 } catch (Exception e) {
                     stringBuilder.append("<li>Error al obtener documentos de " + config.getName() + "</li>");
-                    e.printStackTrace();
                 }
 
                 stringBuilder.append("</ul>");
@@ -183,7 +182,7 @@ public class HTMLController {
     }
 
     
-    private String fetchContentFromOtherServers(String uuid) {
+    private String fetchHtml(String uuid) {
         if (listServers != null) {
             // Llamamos a los servidores remotos para obtener el contenido del documento
             List<ServerConnection> connections = HybridServerServiceUtils.getConnections(listServers);

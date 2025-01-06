@@ -22,6 +22,8 @@ import es.uvigo.esei.dai.hybridserver.model.XSLTDAO;
 import es.uvigo.esei.dai.hybridserver.sax.SAXParsing;
 import es.uvigo.esei.dai.hybridserver.sax.XSLUtils;
 import es.uvigo.esei.dai.hybridserver.webservice.HybridServerServiceConnection;
+import es.uvigo.esei.dai.hybridserver.webservice.HybridServerServiceUtils;
+import es.uvigo.esei.dai.hybridserver.webservice.ServerConnection;
 import es.uvigo.esei.dai.hybridserver.webservice.HybridServerService;
 import jakarta.xml.ws.WebServiceException;
 
@@ -47,73 +49,81 @@ public class XMLController {
         String xsdContent = null;
         String xmlContent = null;
 
-        // Manejo del XSLT
-        if (xsltID != null) {
-            xsltContent = fetchXslt(xsltID);
-            if (xsltContent == null) {
-                response.setStatus(HTTPResponseStatus.S404);
-                response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
-                response.setContent("404 Not Found - XSLT not found for given UUID.");
-                return;
-            }
-            xsdID = xsltDAO.getXsd(xsltID);
-
-            if (xsdID != null) {
-                xsdContent = fetchXsd(xsdID);
-                if (xsdContent == null) {
+        try {
+            // Manejo del XSLT
+            if (xsltID != null) {
+                xsltContent = fetchXslt(xsltID);
+                System.out.println(xsltContent);
+                if (xsltContent == null) {
                     response.setStatus(HTTPResponseStatus.S404);
                     response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
-                    response.setContent("404 Not Found - XSD not found for given UUID.");
+                    response.setContent("404 Not Found - XSLT not found for given UUID.");
+                    return;
+                }
+
+                xsdID = xsltDAO.getXsd(xsltID);
+                if (xsdID != null) {
+                    xsdContent = fetchXsd(xsdID);
+                    if (xsdContent == null) {
+                        response.setStatus(HTTPResponseStatus.S404);
+                        response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
+                        response.setContent("404 Not Found - XSD not found for given UUID.");
+                        return;
+                    }
+                }
+            }
+
+            // Manejo del XML
+            if (xmlID != null) {
+                xmlContent = fetchXml(xmlID);
+                if (xmlContent == null) {
+                    response.setStatus(HTTPResponseStatus.S404);
+                    response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
+                    response.setContent("404 Not Found - XML not found for given UUID.");
+                    return;
+                }
+            } else {
+                // Cargar página de inicio si no se pasa un UUID
+                response.setStatus(HTTPResponseStatus.S200);
+                response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
+                response.setContent(generateXmlPageHome(port));
+                return;
+            }
+
+            // Validar y transformar
+            if (xsdContent != null && xmlContent != null) {
+                try {
+                    SAXParsing.parseAndValidateWithMemoryXSD(xmlContent, xsdContent);
+                } catch (ParserConfigurationException | SAXException | IOException e) {
+                    response.setStatus(HTTPResponseStatus.S400);
+                    response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
+                    response.setContent("400 Bad Request - XML is not valid against the provided XSD.");
                     return;
                 }
             }
-        }
 
-        // Manejo del XML
-        if (xmlID != null) {
-            xmlContent = fetchXml(xmlID);
-            if (xmlContent == null) {
-                response.setStatus(HTTPResponseStatus.S404);
-                response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
-                response.setContent("404 Not Found - XML not found for given UUID.");
-                return;
-            }
-        } else {
-            response.setStatus(HTTPResponseStatus.S200);
-            response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
-            response.setContent(generateXmlPageHome(port));
-            return;
-        }
+            if (xsltContent != null) {
+                try {
+                    String transformedContent = XSLUtils.transformWithMemoryXSLT(xmlContent, xsltContent);
 
-        // Validar y transformar
-        if (xsdContent != null && xmlContent != null) {
-            try {
-                SAXParsing.parseAndValidateWithMemoryXSD(xmlContent, xsdContent);
-            } catch (ParserConfigurationException | SAXException | IOException e) {
-                response.setStatus(HTTPResponseStatus.S400);
-                response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
-                response.setContent("400 Bad Request - XML is not valid against the provided XSD.");
-                return;
-            }
-        }
-
-        if (xsltContent != null) {
-            try {
-                String transformedContent = XSLUtils.transformWithMemoryXSLT(xmlContent, xsltContent);
-
+                    response.setStatus(HTTPResponseStatus.S200);
+                    response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
+                    response.setContent(transformedContent);
+                } catch (Exception e) {
+                    response.setStatus(HTTPResponseStatus.S400);
+                    response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
+                    response.setContent("400 Bad Request - Invalid XSLT.");
+                    return;
+                }
+            } else {
                 response.setStatus(HTTPResponseStatus.S200);
-                response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
-                response.setContent(transformedContent);
-            } catch (Exception e) {
-                response.setStatus(HTTPResponseStatus.S500);
-                response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
-                response.setContent("500 Internal Server Error - Error occurred while transforming XML with XSLT.");
-                return;
+                response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.APPLICATION_XML.getMime());
+                response.setContent(xmlContent);
             }
-        } else {
-            response.setStatus(HTTPResponseStatus.S200);
-            response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.APPLICATION_XML.getMime());
-            response.setContent(xmlContent);
+        } catch (Exception e) {
+            response.setStatus(HTTPResponseStatus.S500);
+            response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
+            response.setContent("500 Internal Server Error - An unexpected error occurred.");
         }
     }
 
@@ -182,83 +192,125 @@ public class XMLController {
             response.setContent("500 Internal Server Error - An unexpected error occurred.");
         }
     }
-
+    
+    // Generar la página principal del XML
     private String generateXmlPageHome(int port) {
-        StringBuilder stringBuilder = new StringBuilder("<!DOCTYPE html>" + "<html lang='es'>" 
-        		+ "<head>" + "  <meta charset='utf-8'/>" + "  <title>Hybrid Server</title>" 
-        		+ "</head>" + "<body>" + "<h1>Hybrid Server</h1>" + "<ul>");
+        StringBuilder stringBuilder = new StringBuilder("<!DOCTYPE html>" +
+            "<html lang='es'>" +
+            "<head>" +
+            "  <meta charset='utf-8'/>" +
+            "  <title>Hybrid Server - XML</title>" +
+            "</head>" +
+            "<body>" +
+            "<h1>Hybrid Server - XML</h1>" +
+            "<h2>Local Server</h2>" +
+            "<ul>");
 
-        for (String documentUUID : xmlDAO.listDocuments()) {
-        	stringBuilder.append("<li>UUID: <a href='http://localhost:" + port + "/xml?uuid=" + documentUUID + "'>" + documentUUID + "</a></li>");
+        for (String uuidXml : xmlDAO.listDocuments()) {
+            stringBuilder.append("<li>UUID: <a href='http://localhost:" + port + "/xml?uuid=" + uuidXml + "'>" + uuidXml + "</a></li>");
         }
-        
-        stringBuilder.append("</ul>");
-        stringBuilder.append("<h2>Añadir nueva página</h2>" + "<form action='/xml' method='POST'>" + "<textarea name='xml'></textarea>" + "<button type='submit'>Submit</button>" + "</form>" + "</body></html>");
-        stringBuilder.append("</body>" + "</html>");
-        
+
+        if (listServers != null) {
+        	
+        	List<ServerConnection> remoteConnections = HybridServerServiceUtils.getConnections(listServers);
+    
+            for (ServerConnection serverConnection : remoteConnections) {
+                ServerConfiguration config = serverConnection.getConfiguration();
+                HybridServerService connection = serverConnection.getConnection();
+
+                stringBuilder.append("<h2>Servidor: " + config.getName() + "</h2><ul>");
+
+                try {
+                	List<String> uuidsXml = connection.getXmlUuids(); // Obtener los UUIDs de documentos remotos
+	                
+                	for (String uuidXml : uuidsXml) {
+	                    stringBuilder.append("<li>UUID: <a href='" + config.getHttpAddress() + "xml?uuid=" + uuidXml + "'>" + uuidXml + "</a></li>");
+	                }
+	            } catch (Exception e) {
+	                stringBuilder.append("<li>Error al obtener documentos de " + config.getName() + "</li>");
+	                e.printStackTrace();
+	            }
+	            stringBuilder.append("</ul>");
+	        }
+        }
+
+        stringBuilder.append("</ul></body></html>");
         return stringBuilder.toString();
     }
-    
-    private String fetchXslt(String xsltID) {
-        if (xsltDAO.containsStylesheet(xsltID)) {
-            return xsltDAO.getStylesheet(xsltID);
-        } else {
-            return fetchFromOtherServers(xsltID, "XSLT");
-        }
-    }
 
-    private String fetchXsd(String xsdID) {
-        if (xsdDAO.containsSchema(xsdID)) {
-            return xsdDAO.getSchema(xsdID);
-        } else {
-            return fetchFromOtherServers(xsdID, "XSD");
-        }
-    }
-
+    // Buscar XML local y remoto
     private String fetchXml(String xmlID) {
         if (xmlDAO.containsDocument(xmlID)) {
             return xmlDAO.getDocument(xmlID);
         } else {
-            return fetchFromOtherServers(xmlID, "XML");
-        }
-    }
-
-    private String fetchFromOtherServers(String uuid, String type) {
-        if (listServers != null) {
-            for (ServerConfiguration serverConfig : listServers) {
-                try {
-                    HybridServerServiceConnection wsc = new HybridServerServiceConnection(
-                        serverConfig.getName(),
-                        serverConfig.getWsdl(),
-                        serverConfig.getNamespace(),
-                        serverConfig.getService(),
-                        serverConfig.getHttpAddress()
-                    );
-                    HybridServerService ws = wsc.setConnection();
-
-                    switch (type) {
-                        case "XSLT":
-                            if (ws.getXsltUuids().contains(uuid)) {
-                                return ws.getXsltContent(uuid);
-                            }
-                            break;
-                        case "XSD":
-                            if (ws.getXsdUuids().contains(uuid)) {
-                                return ws.getXsdContent(uuid);
-                            }
-                            break;
-                        case "XML":
-                            if (ws.getXmlUuids().contains(uuid)) {
-                                return ws.getXmlContent(uuid);
-                            }
-                            break;
+        	if (listServers != null) {
+        		List<ServerConnection> connections = HybridServerServiceUtils.getConnections(listServers);
+      
+        		for (ServerConnection serverConnection : connections) {
+                    HybridServerService connection = serverConnection.getConnection();
+                   
+                    try {
+                        if (connection.getXmlUuids().contains(xmlID)) {
+                            return connection.getXmlContent(xmlID);
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Error al obtener contenido del servidor: " + serverConnection.getConfiguration().getName());
                     }
-                } catch (WebServiceException e) {
-                    System.out.println("Failed to connect to server: " + serverConfig.getName());
                 }
             }
         }
-        return null; 
+        
+        return null;
+    }
+
+    // Buscar XSD local y remoto
+    private String fetchXsd(String xsdID) {
+        if (xsdDAO.containsSchema(xsdID)) {
+            return xsdDAO.getSchema(xsdID);
+        } else {
+        	if (listServers != null) {
+        		List<ServerConnection> connections = HybridServerServiceUtils.getConnections(listServers);
+      
+        		for (ServerConnection serverConnection : connections) {
+                    HybridServerService connection = serverConnection.getConnection();
+                   
+                    try {
+                        if (connection.getXsdUuids().contains(xsdID)) {
+                            return connection.getXsdContent(xsdID);
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Error al obtener contenido del servidor: " + serverConnection.getConfiguration().getName());
+                    }
+                }
+            }
+        }
+        
+        return null;
+    }
+
+    // Buscar XSLT local y remoto
+    private String fetchXslt(String xsltID) {
+        if (xsltDAO.containsStylesheet(xsltID)) {
+            return xsltDAO.getStylesheet(xsltID);
+        } else {
+        	if (listServers != null) {
+        		List<ServerConnection> connections = HybridServerServiceUtils.getConnections(listServers);
+      
+        		for (ServerConnection serverConnection : connections) {
+                    HybridServerService connection = serverConnection.getConnection();
+                   
+                    try {
+                        if (connection.getXsltUuids().contains(xsltID)) {
+                            return connection.getXsltContent(xsltID);
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Error al obtener contenido del servidor: " + serverConnection.getConfiguration().getName());
+                    }
+                }
+            }
+        }
+        
+        return null;
     }
 
 }

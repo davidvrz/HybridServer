@@ -22,20 +22,18 @@ public class HybridServerServiceConnection {
 	}
 
 	public HybridServerService setConnection() {
-		HybridServerService ds= null;
+		HybridServerService hs= null;
 		try {
 			URL url = new URL(wsdl);
-			System.out.println("\n\nURL: " + url);
 			QName name = new QName(namespace, service);
-			System.out.println("QNAME: " + name);
 
 			Service service = Service.create(url, name);
-			ds = service.getPort(HybridServerService.class);
+			hs = service.getPort(HybridServerService.class);
 
 		} catch (MalformedURLException e) {
 			 System.err.println("Error setting connection: " + e.getMessage());
 		}
-		return ds;
+		return hs;
 	}
 
 }

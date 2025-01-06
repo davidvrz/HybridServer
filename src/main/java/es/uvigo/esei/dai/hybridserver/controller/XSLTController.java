@@ -13,6 +13,8 @@ import es.uvigo.esei.dai.hybridserver.http.MIME;
 import es.uvigo.esei.dai.hybridserver.model.XSDDAO;
 import es.uvigo.esei.dai.hybridserver.model.XSLTDAO;
 import es.uvigo.esei.dai.hybridserver.webservice.HybridServerServiceConnection;
+import es.uvigo.esei.dai.hybridserver.webservice.HybridServerServiceUtils;
+import es.uvigo.esei.dai.hybridserver.webservice.ServerConnection;
 import es.uvigo.esei.dai.hybridserver.webservice.HybridServerService;
 import jakarta.xml.ws.WebServiceException;
 
@@ -30,34 +32,41 @@ public class XSLTController {
 
     public void handleXsltGet(String uuid, HTTPResponse response, int port) {
         try {
+            // Si se proporciona un UUID específico
             if (uuid != null && !uuid.isEmpty()) {
                 if (xsltDAO.containsStylesheet(uuid)) {
+                    // Hoja de estilo encontrada localmente
                     String xsltContent = xsltDAO.getStylesheet(uuid);
                     response.setStatus(HTTPResponseStatus.S200);
                     response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.APPLICATION_XML.getMime());
                     response.setContent(xsltContent);
                 } else {
+                    // Buscar en servidores remotos
                     String remoteContent = fetchXsltFromOtherServers(uuid);
                     if (remoteContent != null) {
                         response.setStatus(HTTPResponseStatus.S200);
                         response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.APPLICATION_XML.getMime());
                         response.setContent(remoteContent);
                     } else {
+                        // Hoja de estilo no encontrada
                         response.setStatus(HTTPResponseStatus.S404);
                         response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
                         response.setContent("404 Not Found - Stylesheet not found for given UUID");
                     }
                 }
             } else {
+                // Generar la página principal con las hojas de estilo disponibles
                 response.setStatus(HTTPResponseStatus.S200);
                 response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
                 response.setContent(generateXsltPageHome(port));
             }
         } catch (JDBCException e) {
+            // Manejo de errores específicos de la base de datos
             response.setStatus(HTTPResponseStatus.S500);
             response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.APPLICATION_XML.getMime());
             response.setContent("500 Internal Server Error - " + e.getMessage());
         } catch (Exception e) {
+            // Manejo de errores generales
             response.setStatus(HTTPResponseStatus.S500);
             response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.APPLICATION_XML.getMime());
             response.setContent("500 Internal Server Error - An unexpected error occurred.");
@@ -139,43 +148,76 @@ public class XSLTController {
     }
 
     private String generateXsltPageHome(int port) {
-        StringBuilder stringBuilder = new StringBuilder("<!DOCTYPE html>" + "<html lang='es'>" 
-        		+ "<head>" + "  <meta charset='utf-8'/>" + "  <title>Hybrid Server</title>" 
-        		+ "</head>" + "<body>" + "<h1>Hybrid Server</h1>" + "<ul>");
+        StringBuilder stringBuilder = new StringBuilder("<!DOCTYPE html>" +
+            "<html lang='es'>" +
+            "<head>" +
+            "  <meta charset='utf-8'/>" +
+            "  <title>Hybrid Server - XSLT</title>" +
+            "</head>" +
+            "<body>" +
+            "<h1>Hybrid Server - XSLT</h1>" +
+            "<h2>Local Server</h2>" +
+            "<ul>");
 
-        for (String documentUUID : xsltDAO.listStylesheets()) {
-        	stringBuilder.append("<li>UUID: <a href='http://localhost:" + port + "/xslt?uuid=" + documentUUID + "'>" + documentUUID + "</a></li>");
+        // Listar las hojas de estilo XSLT locales
+        for (String uuidXslt : xsltDAO.listStylesheets()) {
+            stringBuilder.append("<li>UUID: <a href='http://localhost:" + port + "/xslt?uuid=" + uuidXslt + "'>" + uuidXslt + "</a></li>");
         }
-        
+
+        // Buscar documentos en servidores remotos
+        if (listServers != null) {
+            List<ServerConnection> remoteConnections = HybridServerServiceUtils.getConnections(listServers);
+
+            for (ServerConnection serverConnection : remoteConnections) {
+                ServerConfiguration config = serverConnection.getConfiguration();
+                HybridServerService connection = serverConnection.getConnection();
+                stringBuilder.append("<h2>Servidor: " + config.getName() + "</h2><ul>");
+
+                try {
+                    List<String> uuidsXslt = connection.getXsltUuids(); // Obtener UUIDs remotos
+                    for (String uuidXslt : uuidsXslt) {
+                        stringBuilder.append("<li>UUID: <a href='" + config.getHttpAddress() + "xslt?uuid=" + uuidXslt + "'>" + uuidXslt + "</a></li>");
+                    }
+                } catch (Exception e) {
+                    stringBuilder.append("<li>Error al obtener hojas de estilo de " + config.getName() + "</li>");
+                    e.printStackTrace();
+                }
+
+                stringBuilder.append("</ul>");
+            }
+        }
+
         stringBuilder.append("</ul>");
-        stringBuilder.append("<h2>Añadir nueva página</h2>" + "<form action='/xslt' method='POST'>" + "<textarea name='xslt'></textarea>" + "<button type='submit'>Submit</button>" + "</form>" + "</body></html>");
-        stringBuilder.append("</body>" + "</html>");
-        
+        stringBuilder.append("<h2>Añadir nueva hoja de estilo</h2>" +
+            "<form action='/xslt' method='POST'>" +
+            "<textarea name='xslt'></textarea>" +
+            "<button type='submit'>Submit</button>" +
+            "</form>" +
+            "</body>" +
+            "</html>");
+
         return stringBuilder.toString();
     }
-    
-    
+
     private String fetchXsltFromOtherServers(String uuid) {
         if (listServers != null) {
-            for (ServerConfiguration serverConfig : listServers) {
+            // Buscar en servidores remotos
+            List<ServerConnection> connections = HybridServerServiceUtils.getConnections(listServers);
+
+            for (ServerConnection serverConnection : connections) {
+                HybridServerService connection = serverConnection.getConnection();
+
                 try {
-                    HybridServerServiceConnection wsc = new HybridServerServiceConnection(
-                        serverConfig.getName(),
-                        serverConfig.getWsdl(),
-                        serverConfig.getNamespace(),
-                        serverConfig.getService(),
-                        serverConfig.getHttpAddress()
-                    );
-                    HybridServerService ws = wsc.setConnection();
-                    if (ws.getXsltUuids().contains(uuid)) {
-                        return ws.getXsltContent(uuid);
+                    if (connection.getXsltUuids().contains(uuid)) {
+                        return connection.getXsltContent(uuid);
                     }
-                } catch (WebServiceException e) {
-                    System.out.println("Failed to connect to server: " + serverConfig.getName());
+                } catch (Exception e) {
+                    System.err.println("Error al obtener contenido del servidor: " + serverConnection.getConfiguration().getName());
                 }
             }
         }
-        return null; 
+
+        return null;
     }
 
 }

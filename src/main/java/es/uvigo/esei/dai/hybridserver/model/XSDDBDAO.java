@@ -9,11 +9,19 @@ import es.uvigo.esei.dai.hybridserver.config.JDBCException;
 
 public class XSDDBDAO implements XSDDAO {
 
+	String DB_URL, DB_PASSWORD, DB_USER;
+
+	public XSDDBDAO(String dbUrl, String dbUser, String dbPassword) {
+		this.DB_URL = dbUrl;
+		this.DB_USER = dbUser;
+		this.DB_PASSWORD = dbPassword;
+	}
+	
     @Override
     public void addSchema(String uuid, String content) {
         String query = "INSERT INTO XSD (uuid, content) VALUES (?, ?)";
 
-        try (Connection connection = JDBCConnection.getConnection();
+        try (Connection connection = JDBCConnection.getConnection(DB_URL, DB_USER, DB_PASSWORD);
              PreparedStatement statement = connection.prepareStatement(query)) {
 
             statement.setString(1, uuid);
@@ -30,7 +38,7 @@ public class XSDDBDAO implements XSDDAO {
         boolean contains = false;
         String query = "SELECT `uuid` FROM XSD WHERE `uuid`=?";
 
-        try (Connection connection = JDBCConnection.getConnection();
+        try (Connection connection = JDBCConnection.getConnection(DB_URL, DB_USER, DB_PASSWORD);
              PreparedStatement statement = connection.prepareStatement(query)) {
 
             statement.setString(1, uuid);
@@ -56,7 +64,7 @@ public class XSDDBDAO implements XSDDAO {
     public void deleteSchema(String uuid) {
         String query = "DELETE FROM XSD WHERE uuid = ?";
 
-        try (Connection connection = JDBCConnection.getConnection();
+        try (Connection connection = JDBCConnection.getConnection(DB_URL, DB_USER, DB_PASSWORD);
              PreparedStatement statement = connection.prepareStatement(query)) {
 
             statement.setString(1, uuid);
@@ -71,7 +79,7 @@ public class XSDDBDAO implements XSDDAO {
     public String getSchema(String uuid) {
         String query = "SELECT content FROM XSD WHERE uuid = ?";
 
-        try (Connection connection = JDBCConnection.getConnection();
+        try (Connection connection = JDBCConnection.getConnection(DB_URL, DB_USER, DB_PASSWORD);
              PreparedStatement statement = connection.prepareStatement(query)) {
 
         	 statement.setString(1, uuid);
@@ -92,7 +100,7 @@ public class XSDDBDAO implements XSDDAO {
         List<String> schemas = new ArrayList<>();
         String query = "SELECT uuid FROM XSD";
 
-        try (Connection connection = JDBCConnection.getConnection();
+        try (Connection connection = JDBCConnection.getConnection(DB_URL, DB_USER, DB_PASSWORD);
              PreparedStatement statement = connection.prepareStatement(query);
              ResultSet result = statement.executeQuery()) {
 

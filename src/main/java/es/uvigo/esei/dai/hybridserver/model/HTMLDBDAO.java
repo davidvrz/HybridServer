@@ -9,11 +9,19 @@ import es.uvigo.esei.dai.hybridserver.config.JDBCException;
 
 public class HTMLDBDAO implements HTMLDAO{
 	
+	String DB_URL, DB_PASSWORD, DB_USER;
+
+	public HTMLDBDAO(String dbUrl, String dbUser, String dbPassword) {
+		this.DB_URL = dbUrl;
+		this.DB_USER = dbUser;
+		this.DB_PASSWORD = dbPassword;
+	}
+	
 	@Override
     public void addDocument(String uuid, String content) {
         String query = "INSERT INTO HTML (uuid, content) VALUES (?, ?)";
         
-        try (Connection connection = JDBCConnection.getConnection();
+        try (Connection connection = JDBCConnection.getConnection(DB_URL, DB_USER, DB_PASSWORD);
              PreparedStatement statement = connection.prepareStatement(query)) {
 
         	statement.setString(1, uuid); 
@@ -31,7 +39,7 @@ public class HTMLDBDAO implements HTMLDAO{
 		boolean contains = false;
 
 		String query = "SELECT `uuid` FROM HTML WHERE `uuid`=?";
-		try (Connection connection = JDBCConnection.getConnection();
+		try (Connection connection = JDBCConnection.getConnection(DB_URL, DB_USER, DB_PASSWORD);
 	             PreparedStatement statement = connection.prepareStatement(query)) {
 				
 				statement.setString(1, uuid);
@@ -57,7 +65,7 @@ public class HTMLDBDAO implements HTMLDAO{
     public void deleteDocument(String uuid) {
         String query = "DELETE FROM HTML WHERE uuid = ?";
 
-        try (Connection connection = JDBCConnection.getConnection(); 
+        try (Connection connection = JDBCConnection.getConnection(DB_URL, DB_USER, DB_PASSWORD); 
              PreparedStatement statement = connection.prepareStatement(query)) {
 
             statement.setString(1, uuid); 
@@ -74,7 +82,7 @@ public class HTMLDBDAO implements HTMLDAO{
         String query = "SELECT content FROM HTML WHERE uuid = ?";
         String content = "";
 
-        try (Connection connection = JDBCConnection.getConnection(); 
+        try (Connection connection = JDBCConnection.getConnection(DB_URL, DB_USER, DB_PASSWORD); 
              PreparedStatement statement = connection.prepareStatement(query)) {
              
             statement.setString(1, uuid); 
@@ -95,7 +103,7 @@ public class HTMLDBDAO implements HTMLDAO{
         List<String> documents = new ArrayList<>();
         String query = "SELECT uuid FROM HTML";
 
-        try (Connection connection = JDBCConnection.getConnection(); 
+        try (Connection connection = JDBCConnection.getConnection(DB_URL, DB_USER, DB_PASSWORD); 
              PreparedStatement statement = connection.prepareStatement(query);
              ResultSet result = statement.executeQuery()) {
              while (result.next()) {
