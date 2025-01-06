@@ -159,7 +159,7 @@ public class HybridServer implements AutoCloseable {
   	    }
   	    
 	  	try {
-	        Thread.sleep(10);  // Pausa para permitir que se cierre el servicio antes de intentar crear otro en la misma url
+	        Thread.sleep(50);  // Pausa para permitir que se cierre el servicio antes de intentar crear otro en la misma url
 	    } catch (InterruptedException e) {
 	        e.printStackTrace();
 	    }

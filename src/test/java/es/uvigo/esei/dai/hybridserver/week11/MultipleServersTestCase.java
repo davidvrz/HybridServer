@@ -199,14 +199,13 @@ public abstract class MultipleServersTestCase {
 	
 	private static String[] getAllResources(String[] wildcardResources) {
 		final String[] uuids = new String[wildcardResources.length * NUMBER_OF_SERVERS];
-		System.out.println("NUM SERVERS " + NUMBER_OF_SERVERS);
+
 		int index = 0;
 		for (int i = 0; i < NUMBER_OF_SERVERS; i++) {
 			for (int j = 0; j < wildcardResources.length; j++) {
 				uuids[index++] = wildcardResources[j]
 					.replaceAll("X", Integer.toString(i + 1));
 			}
-			
 		}
 		
 		return uuids;

@@ -37,6 +37,9 @@ public class XSLUtils {
 	public static String transformWithMemoryXSLT(String xmlContent, String xsltContent) 
 			throws TransformerException, IOException {
 		
+	    System.out.println("\n\nXML Content (inside transform): " + xmlContent);
+	    System.out.println("\n\nXSLT Content (inside transform): " + xsltContent);
+		
 		TransformerFactory tFactory = TransformerFactory.newInstance();
 		ByteArrayInputStream arrayXslt = new ByteArrayInputStream(xsltContent.getBytes());
 		Transformer transformer = tFactory.newTransformer(new StreamSource(arrayXslt));

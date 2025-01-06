@@ -43,7 +43,7 @@ public class XMLConfigurationLoaderTest {
 	@Test
 	public final void testLoad() throws Exception {
 		try (Reader xmlReader = openReaderToFile("/configuration.xml")) {
-			final Configuration configuration = this.xmlConfiguration.load(xmlReader); 
+			final Configuration configuration = this.xmlConfiguration.load(xmlReader);
 
 			assertThat(configuration.getHttpPort(), is(equalTo(10000)));
 			assertThat(configuration.getNumClients(), is(equalTo(15)));
@@ -58,21 +58,21 @@ public class XMLConfigurationLoaderTest {
 			assertThat(server.getName(), is(equalTo("Server 2")));
 			assertThat(server.getWsdl(), is(equalTo("http://localhost:20001/hs?wsdl")));
 			assertThat(server.getNamespace(), is(equalTo("http://hybridserver.dai.esei.uvigo.es/")));
-			assertThat(server.getService(), is(equalTo("HybridServerServiceImpl")));
+			assertThat(server.getService(), is(equalTo("ControllerService")));
 			assertThat(server.getHttpAddress(), is(equalTo("http://localhost:10001/")));
 
 			server = configuration.getServers().get(1);
 			assertThat(server.getName(), is(equalTo("Server 3")));
 			assertThat(server.getWsdl(), is(equalTo("http://localhost:20002/hs?wsdl")));
 			assertThat(server.getNamespace(), is(equalTo("http://hybridserver.dai.esei.uvigo.es/")));
-			assertThat(server.getService(), is(equalTo("HybridServerServiceImpl")));
+			assertThat(server.getService(), is(equalTo("ControllerService")));
 			assertThat(server.getHttpAddress(), is(equalTo("http://localhost:10002/")));
 
 			server = configuration.getServers().get(2);
 			assertThat(server.getName(), is(equalTo("Server 4")));
 			assertThat(server.getWsdl(), is(equalTo("http://localhost:20003/hs?wsdl")));
 			assertThat(server.getNamespace(), is(equalTo("http://hybridserver.dai.esei.uvigo.es/")));
-			assertThat(server.getService(), is(equalTo("HybridServerServiceImpl")));
+			assertThat(server.getService(), is(equalTo("ControllerService")));
 			assertThat(server.getHttpAddress(), is(equalTo("http://localhost:10003/")));
 		}
 	}

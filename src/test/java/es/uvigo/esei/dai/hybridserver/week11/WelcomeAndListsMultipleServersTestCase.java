@@ -63,7 +63,6 @@ extends MultipleServersTestCase {
 	protected void testList(final String resource, final String[] uuids, final int serverIndex)
 	throws IOException {
 		final String url = serversHTTPURL[serverIndex] + resource;
-		System.out.println("url: " + url);
 		
 		final String content = getContentWithType(url, "text/html");
 		

@@ -49,11 +49,27 @@ public class XMLController {
         String xsdContent = null;
         String xmlContent = null;
 
-        try {
+        try {       	
+        	// Manejo del XML
+            if (xmlID != null) {
+                xmlContent = fetchXml(xmlID);
+                if (xmlContent == null) {
+                    response.setStatus(HTTPResponseStatus.S404);
+                    response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
+                    response.setContent("404 Not Found - XML not found for given UUID.");
+                    return;
+                }
+            } else {
+                // Cargar página de inicio si no se pasa un UUID
+                response.setStatus(HTTPResponseStatus.S200);
+                response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
+                response.setContent(generateXmlPageHome(port));
+                return;
+            }
+            
             // Manejo del XSLT
             if (xsltID != null) {
                 xsltContent = fetchXslt(xsltID);
-                System.out.println(xsltContent);
                 if (xsltContent == null) {
                     response.setStatus(HTTPResponseStatus.S404);
                     response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
@@ -73,23 +89,6 @@ public class XMLController {
                 }
             }
 
-            // Manejo del XML
-            if (xmlID != null) {
-                xmlContent = fetchXml(xmlID);
-                if (xmlContent == null) {
-                    response.setStatus(HTTPResponseStatus.S404);
-                    response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
-                    response.setContent("404 Not Found - XML not found for given UUID.");
-                    return;
-                }
-            } else {
-                // Cargar página de inicio si no se pasa un UUID
-                response.setStatus(HTTPResponseStatus.S200);
-                response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
-                response.setContent(generateXmlPageHome(port));
-                return;
-            }
-
             // Validar y transformar
             if (xsdContent != null && xmlContent != null) {
                 try {
@@ -103,7 +102,7 @@ public class XMLController {
             }
 
             if (xsltContent != null) {
-                try {
+                try {	
                     String transformedContent = XSLUtils.transformWithMemoryXSLT(xmlContent, xsltContent);
 
                     response.setStatus(HTTPResponseStatus.S200);
@@ -124,6 +123,7 @@ public class XMLController {
             response.setStatus(HTTPResponseStatus.S500);
             response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
             response.setContent("500 Internal Server Error - An unexpected error occurred.");
+            e.printStackTrace();
         }
     }
 
