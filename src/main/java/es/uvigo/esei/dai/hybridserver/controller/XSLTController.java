@@ -32,43 +32,36 @@ public class XSLTController {
 
     public void handleXsltGet(String uuid, HTTPResponse response, int port) {
         try {
-            // Si se proporciona un UUID específico
             if (uuid != null && !uuid.isEmpty()) {
                 if (xsltDAO.containsStylesheet(uuid)) {
-                    // Hoja de estilo encontrada localmente
                     String xsltContent = xsltDAO.getStylesheet(uuid);
                     response.setStatus(HTTPResponseStatus.S200);
                     response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.APPLICATION_XML.getMime());
                     response.setContent(xsltContent);
                 } else {
-                    // Buscar en servidores remotos
                     String remoteContent = fetchXsltFromOtherServers(uuid);
                     if (remoteContent != null) {
                         response.setStatus(HTTPResponseStatus.S200);
                         response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.APPLICATION_XML.getMime());
                         response.setContent(remoteContent);
                     } else {
-                        // Hoja de estilo no encontrada
                         response.setStatus(HTTPResponseStatus.S404);
                         response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
                         response.setContent("404 Not Found - Stylesheet not found for given UUID");
                     }
                 }
             } else {
-                // Generar la página principal con las hojas de estilo disponibles
                 response.setStatus(HTTPResponseStatus.S200);
                 response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
                 response.setContent(generateXsltPageHome(port));
             }
         } catch (JDBCException e) {
-            // Manejo de errores específicos de la base de datos
             response.setStatus(HTTPResponseStatus.S500);
-            response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.APPLICATION_XML.getMime());
+            response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
             response.setContent("500 Internal Server Error - " + e.getMessage());
         } catch (Exception e) {
-            // Manejo de errores generales
             response.setStatus(HTTPResponseStatus.S500);
-            response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.APPLICATION_XML.getMime());
+            response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
             response.setContent("500 Internal Server Error - An unexpected error occurred.");
         }
     }
@@ -159,12 +152,10 @@ public class XSLTController {
             "<h2>Local Server</h2>" +
             "<ul>");
 
-        // Listar las hojas de estilo XSLT locales
         for (String uuidXslt : xsltDAO.listStylesheets()) {
             stringBuilder.append("<li>UUID: <a href='http://localhost:" + port + "/xslt?uuid=" + uuidXslt + "'>" + uuidXslt + "</a></li>");
         }
 
-        // Buscar documentos en servidores remotos
         if (listServers != null) {
             List<ServerConnection> remoteConnections = HybridServerServiceUtils.getConnections(listServers);
 
@@ -187,21 +178,13 @@ public class XSLTController {
             }
         }
 
-        stringBuilder.append("</ul>");
-        stringBuilder.append("<h2>Añadir nueva hoja de estilo</h2>" +
-            "<form action='/xslt' method='POST'>" +
-            "<textarea name='xslt'></textarea>" +
-            "<button type='submit'>Submit</button>" +
-            "</form>" +
-            "</body>" +
-            "</html>");
+        stringBuilder.append("</ul></body></html>");
 
         return stringBuilder.toString();
     }
 
     private String fetchXsltFromOtherServers(String uuid) {
         if (listServers != null) {
-            // Buscar en servidores remotos
             List<ServerConnection> connections = HybridServerServiceUtils.getConnections(listServers);
 
             for (ServerConnection serverConnection : connections) {

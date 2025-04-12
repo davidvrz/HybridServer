@@ -2,7 +2,6 @@ package es.uvigo.esei.dai.hybridserver;
 
 import java.io.File;
 import java.io.FileReader;
-import java.io.IOException;
 
 public class Launcher {
     public static void main(String[] args) {
@@ -21,7 +20,6 @@ public class Launcher {
                 Configuration configuration = configLoader.load(reader);
                 System.out.println(configuration);
 
-                // Crear el servidor usando la configuración cargada
                 server = new HybridServer(configuration);
             } catch (Exception e) {
                 System.err.println("Error al cargar el archivo de configuración: " + e.getMessage());
@@ -32,7 +30,6 @@ public class Launcher {
             return;
         }
 
-        // Iniciar el servidor
         server.start();
         System.out.println("Servidor iniciado en el puerto " + server.getPort());
     }

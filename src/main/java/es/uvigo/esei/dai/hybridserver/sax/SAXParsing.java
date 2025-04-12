@@ -18,6 +18,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
+import org.xml.sax.helpers.DefaultHandler;
 
 public class SAXParsing {
 	public static void parseAndValidateWithExternalXSD(Reader reader, String schemaPath, ContentHandler handler)
@@ -70,4 +71,5 @@ public class SAXParsing {
         xmlReader.parse(inputSource);
 
 	}
+
 }

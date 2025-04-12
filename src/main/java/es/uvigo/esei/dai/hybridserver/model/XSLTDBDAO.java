@@ -80,7 +80,7 @@ public class XSLTDBDAO implements XSLTDAO {
         	 statement.setString(1, uuid);
              try (ResultSet result = statement.executeQuery()) {
                  if (result.next()) {
-                     return result.getString("content");
+                     return result.getString("content");                    
                  } else {
                      return null;
                  }
@@ -118,9 +118,10 @@ public class XSLTDBDAO implements XSLTDAO {
              PreparedStatement statement = connection.prepareStatement(query)) {
                 
             statement.setString(1, uuid);
-            
+                        
             try (ResultSet result = statement.executeQuery()) {
             	if (result.next()) {
+            		System.out.println(result.getString("xsd"));
                     return result.getString("xsd");
                 } else {
                     return null;

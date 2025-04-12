@@ -139,12 +139,10 @@ public class HTMLController {
             "<h2>Local Server</h2>" +
             "<ul>");
 
-        // Mostrar los documentos locales
         for (String uuidHtml : htmlDAO.listDocuments()) {
             stringBuilder.append("<li>UUID: <a href='http://localhost:" + port + "/html?uuid=" + uuidHtml + "'>" + uuidHtml + "</a></li>");
         }
 
-        // Ahora buscamos los documentos remotos, conectamos a los servidores remotos y obtenemos los UUIDs
         if (listServers != null) {
         	
             List<ServerConnection> remoteConnections = HybridServerServiceUtils.getConnections(listServers);
@@ -156,7 +154,7 @@ public class HTMLController {
                 stringBuilder.append("<h2>Servidor: " + config.getName() + "</h2><ul>");
 
                 try {
-                    List<String> uuidsHtml = connection.getHtmlUuids(); // Obtener los UUIDs de documentos remotos
+                    List<String> uuidsHtml = connection.getHtmlUuids();
                     
                     for (String uuidHtml : uuidsHtml) {
                         stringBuilder.append("<li>UUID: <a href='" + config.getHttpAddress() + "html?uuid=" + uuidHtml + "'>" + uuidHtml + "</a></li>");
@@ -169,14 +167,7 @@ public class HTMLController {
             }
         }
 
-        stringBuilder.append("</ul>");
-        stringBuilder.append("<h2>Añadir nueva página</h2>" +
-            "<form action='/html' method='POST'>" +
-            "<textarea name='html'></textarea>" +
-            "<button type='submit'>Submit</button>" +
-            "</form>" +
-            "</body>" +
-            "</html>");
+        stringBuilder.append("</ul></body></html>");
 
         return stringBuilder.toString();
     }
@@ -184,7 +175,6 @@ public class HTMLController {
     
     private String fetchHtml(String uuid) {
         if (listServers != null) {
-            // Llamamos a los servidores remotos para obtener el contenido del documento
             List<ServerConnection> connections = HybridServerServiceUtils.getConnections(listServers);
 
             for (ServerConnection serverConnection : connections) {

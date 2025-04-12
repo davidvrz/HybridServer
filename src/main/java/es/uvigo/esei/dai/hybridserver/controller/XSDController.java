@@ -28,43 +28,36 @@ public class XSDController {
 
     public void handleXsdGet(String uuid, HTTPResponse response, int port) {
         try {
-            // Si se proporciona un UUID específico
             if (uuid != null && !uuid.isEmpty()) {
                 if (xsdDAO.containsSchema(uuid)) {
-                    // Esquema XSD encontrado localmente
                     String schemaContent = xsdDAO.getSchema(uuid);
                     response.setStatus(HTTPResponseStatus.S200);
                     response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.APPLICATION_XML.getMime());
                     response.setContent(schemaContent);
                 } else {
-                    // Buscar en servidores remotos
                     String remoteContent = fetchContentFromOtherServers(uuid);
                     if (remoteContent != null) {
                         response.setStatus(HTTPResponseStatus.S200);
                         response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.APPLICATION_XML.getMime());
                         response.setContent(remoteContent);
                     } else {
-                        // Esquema XSD no encontrado
                         response.setStatus(HTTPResponseStatus.S404);
                         response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
                         response.setContent("404 Not Found - XSD Schema not found for given UUID.");
                     }
                 }
             } else {
-                // Generar la página principal con los esquemas XSD disponibles
                 response.setStatus(HTTPResponseStatus.S200);
                 response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
                 response.setContent(generateXsdPageHome(port));
             }
         } catch (JDBCException e) {
-            // Manejo de errores específicos de la base de datos
             response.setStatus(HTTPResponseStatus.S500);
-            response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.APPLICATION_XML.getMime());
+            response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
             response.setContent("500 Internal Server Error - " + e.getMessage());
         } catch (Exception e) {
-            // Manejo de errores generales
             response.setStatus(HTTPResponseStatus.S500);
-            response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.APPLICATION_XML.getMime());
+            response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
             response.setContent("500 Internal Server Error - An unexpected error occurred.");
         }
     }
@@ -148,12 +141,10 @@ public class XSDController {
             "<h2>Local Server</h2>" +
             "<ul>");
 
-        // Listar los esquemas XSD locales
         for (String uuidXsd : xsdDAO.listSchemas()) {
             stringBuilder.append("<li>UUID: <a href='http://localhost:" + port + "/xsd?uuid=" + uuidXsd + "'>" + uuidXsd + "</a></li>");
         }
 
-        // Buscar documentos en servidores remotos
         if (listServers != null) {
             List<ServerConnection> remoteConnections = HybridServerServiceUtils.getConnections(listServers);
 
@@ -176,21 +167,13 @@ public class XSDController {
             }
         }
 
-        stringBuilder.append("</ul>");
-        stringBuilder.append("<h2>Añadir nuevo esquema</h2>" +
-            "<form action='/xsd' method='POST'>" +
-            "<textarea name='xsd'></textarea>" +
-            "<button type='submit'>Submit</button>" +
-            "</form>" +
-            "</body>" +
-            "</html>");
+        stringBuilder.append("</ul></body></html>");     
 
         return stringBuilder.toString();
     }
 
     private String fetchContentFromOtherServers(String uuid) {
         if (listServers != null) {
-            // Buscar en servidores remotos
             List<ServerConnection> connections = HybridServerServiceUtils.getConnections(listServers);
 
             for (ServerConnection serverConnection : connections) {

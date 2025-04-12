@@ -41,9 +41,7 @@ public class XMLController {
     }
     
     public void handleXmlGet(String xmlID, HTTPResponse response, HTTPRequest request, int port) throws HTTPParseException {
-        // Obtener parámetros de la solicitud
         String xsltID = request.getResourceParameters().get("xslt");
-        String xsdID = null;
 
         String xsltContent = null;
         String xsdContent = null;
@@ -77,15 +75,12 @@ public class XMLController {
                     return;
                 }
 
-                xsdID = xsltDAO.getXsd(xsltID);
-                if (xsdID != null) {
-                    xsdContent = fetchXsd(xsdID);
-                    if (xsdContent == null) {
-                        response.setStatus(HTTPResponseStatus.S404);
-                        response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
-                        response.setContent("404 Not Found - XSD not found for given UUID.");
-                        return;
-                    }
+                xsdContent = fetchXsd(xsltID);
+                if (xsdContent == null) {
+                    response.setStatus(HTTPResponseStatus.S404);
+                    response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
+                    response.setContent("404 Not Found - XSD not found for given UUID.");
+                    return;
                 }
             }
 
@@ -99,7 +94,7 @@ public class XMLController {
                     response.setContent("400 Bad Request - XML is not valid against the provided XSD.");
                     return;
                 }
-            }
+            } 
 
             if (xsltContent != null) {
                 try {	
@@ -119,11 +114,14 @@ public class XMLController {
                 response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.APPLICATION_XML.getMime());
                 response.setContent(xmlContent);
             }
+        } catch (JDBCException e) {
+            response.setStatus(HTTPResponseStatus.S500);
+            response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
+            response.setContent("500 Internal Server Error - " + e.getMessage());
         } catch (Exception e) {
             response.setStatus(HTTPResponseStatus.S500);
             response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
             response.setContent("500 Internal Server Error - An unexpected error occurred.");
-            e.printStackTrace();
         }
     }
 
@@ -193,7 +191,6 @@ public class XMLController {
         }
     }
     
-    // Generar la página principal del XML
     private String generateXmlPageHome(int port) {
         StringBuilder stringBuilder = new StringBuilder("<!DOCTYPE html>" +
             "<html lang='es'>" +
@@ -221,7 +218,7 @@ public class XMLController {
                 stringBuilder.append("<h2>Servidor: " + config.getName() + "</h2><ul>");
 
                 try {
-                	List<String> uuidsXml = connection.getXmlUuids(); // Obtener los UUIDs de documentos remotos
+                	List<String> uuidsXml = connection.getXmlUuids();
 	                
                 	for (String uuidXml : uuidsXml) {
 	                    stringBuilder.append("<li>UUID: <a href='" + config.getHttpAddress() + "xml?uuid=" + uuidXml + "'>" + uuidXml + "</a></li>");
@@ -238,7 +235,6 @@ public class XMLController {
         return stringBuilder.toString();
     }
 
-    // Buscar XML local y remoto
     private String fetchXml(String xmlID) {
         if (xmlDAO.containsDocument(xmlID)) {
             return xmlDAO.getDocument(xmlID);
@@ -263,20 +259,19 @@ public class XMLController {
         return null;
     }
 
-    // Buscar XSD local y remoto
-    private String fetchXsd(String xsdID) {
-        if (xsdDAO.containsSchema(xsdID)) {
-            return xsdDAO.getSchema(xsdID);
+    private String fetchXslt(String xsltID) {
+        if (xsltDAO.containsStylesheet(xsltID)) {
+            return xsltDAO.getStylesheet(xsltID);
         } else {
         	if (listServers != null) {
         		List<ServerConnection> connections = HybridServerServiceUtils.getConnections(listServers);
-      
+   
         		for (ServerConnection serverConnection : connections) {
                     HybridServerService connection = serverConnection.getConnection();
-                   
+                                       
                     try {
-                        if (connection.getXsdUuids().contains(xsdID)) {
-                            return connection.getXsdContent(xsdID);
+                        if (connection.getXsltUuids().contains(xsltID)) {
+                            return connection.getXsltContent(xsltID);
                         }
                     } catch (Exception e) {
                         System.err.println("Error al obtener contenido del servidor: " + serverConnection.getConfiguration().getName());
@@ -287,25 +282,29 @@ public class XMLController {
         
         return null;
     }
+    
+    private String fetchXsd(String xsltID) {
+        String xsdUuid = xsltDAO.getXsd(xsltID);
+        
+        if (xsdUuid != null) {
+            String xsdContent = xsdDAO.getSchema(xsdUuid);
+            if (xsdContent != null) {
+                return xsdContent;
+            }
+        }
 
-    // Buscar XSLT local y remoto
-    private String fetchXslt(String xsltID) {
-        if (xsltDAO.containsStylesheet(xsltID)) {
-            return xsltDAO.getStylesheet(xsltID);
-        } else {
-        	if (listServers != null) {
-        		List<ServerConnection> connections = HybridServerServiceUtils.getConnections(listServers);
-      
-        		for (ServerConnection serverConnection : connections) {
-                    HybridServerService connection = serverConnection.getConnection();
-                   
-                    try {
-                        if (connection.getXsltUuids().contains(xsltID)) {
-                            return connection.getXsltContent(xsltID);
-                        }
-                    } catch (Exception e) {
-                        System.err.println("Error al obtener contenido del servidor: " + serverConnection.getConfiguration().getName());
+        if (listServers != null) {
+            List<ServerConnection> connections = HybridServerServiceUtils.getConnections(listServers);
+            for (ServerConnection serverConnection : connections) {
+                HybridServerService connection = serverConnection.getConnection();
+                
+                try {
+                    String remoteXsdUuid = connection.getAssociatedXsdUuid(xsltID);
+                    if (remoteXsdUuid != null) {
+                        return connection.getXsdContent(remoteXsdUuid);
                     }
+                } catch (Exception e) {
+                    System.err.println("Error al obtener el XSD del servidor: " + serverConnection.getConfiguration().getName());
                 }
             }
         }

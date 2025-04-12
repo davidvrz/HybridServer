@@ -17,7 +17,6 @@
  */
 package es.uvigo.esei.dai.hybridserver;
 
-import es.uvigo.esei.dai.hybridserver.config.JDBCConnection;
 import es.uvigo.esei.dai.hybridserver.controller.HTMLController;
 import es.uvigo.esei.dai.hybridserver.controller.XMLController;
 import es.uvigo.esei.dai.hybridserver.controller.XSDController;
@@ -159,7 +158,7 @@ public class HybridServer implements AutoCloseable {
   	    }
   	    
 	  	try {
-	        Thread.sleep(50);  // Pausa para permitir que se cierre el servicio antes de intentar crear otro en la misma url
+	        Thread.sleep(500);  // Pausa para permitir que se cierre el servicio antes de intentar crear otro en la misma url
 	    } catch (InterruptedException e) {
 	        e.printStackTrace();
 	    }

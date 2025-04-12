@@ -47,7 +47,6 @@ public class HybridServerThread implements Runnable {
         	String uuid = request.getResourceParameters().get("uuid");
         	
         	System.out.println(request.toString());
-        	System.out.println(resource);
 		    
 	        switch (request.getMethod()) {
             case GET:
@@ -142,17 +141,23 @@ public class HybridServerThread implements Runnable {
     
     
     private void handleWelcomePage(HTTPResponse response, int port) {
-        StringBuilder stringBuilder = new StringBuilder("<!DOCTYPE html>" + "<html lang='es'>" + "<head>"
-                + "<meta charset='utf-8'/>" + "  <title>Hybrid Server</title>" + "</head>"
-                + "<body>" + "<h1>Hybrid Server</h1>"
-                + "<p>Autores: David Álvarez Iglesias, Antonio Caride Pernas.</p>"
-                + "<ul>"
-                + "<li><a href='http://localhost:" + port + "/html'>Lista de Páginas HTML</a></li>"
-                + "<li><a href='http://localhost:" + port + "/xml'>Lista de Páginas XML</a></li>"
-                + "<li><a href='http://localhost:" + port + "/xsd'>Lista de Páginas XSD</a></li>"
-                + "<li><a href='http://localhost:" + port + "/xslt'>Lista de Páginas XSLT</a></li>"
-                + "</ul>"
-                + "</body>" + "</html>");
+    	String stringBuilder = "<!DOCTYPE html>" +
+                "<html lang='es'>" +
+                "<head>" +
+                "<meta charset='utf-8'>" +
+                "<title>Hybrid Server</title>" +
+                "</head>" +
+                "<body>" +
+                "<h1>Hybrid Server</h1>" +
+                "<p>Autores: David Álvarez Iglesias, Antonio Caride Pernas.</p>" +
+                "<ul>" +
+                "<li><a href='http://localhost:" + port + "/html'>Lista de Páginas HTML</a></li>" +
+                "<li><a href='http://localhost:" + port + "/xml'>Lista de Páginas XML</a></li>" +
+                "<li><a href='http://localhost:" + port + "/xsd'>Lista de Páginas XSD</a></li>" +
+                "<li><a href='http://localhost:" + port + "/xslt'>Lista de Páginas XSLT</a></li>" +
+                "</ul>" +
+                "</body>" +
+                "</html>";
 
         response.setStatus(HTTPResponseStatus.S200);
         response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());

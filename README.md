@@ -1,3 +1,28 @@
+# HybridServer
+
+**HybridServer** es un sistema híbrido cliente/servidor y P2P para la gestión distribuida de documentos estructurados (HTML y XML), integrando funcionalidades como validación XSD, transformación con XSLT, almacenamiento en base de datos y comunicación entre servidores.
+
+- Servidor HTTP que gestiona documentos mediante identificadores UUID
+- Soporte completo para HTML y XML
+- Validación automática de XML contra XSD antes de servir
+- Transformación de XML mediante XSLT en tiempo real
+- Sistema P2P entre servidores: búsqueda y recuperación de recursos remotos
+- Comunicación vía servicios web entre nodos
+- Control de concurrencia configurado por número de clientes simultáneos
+- Configuración del sistema mediante fichero externo (Java Properties/XML)
+- Gestión de errores y códigos HTTP correctos (404, 500, etc.)
+
+## 👨‍💻 Autores
+
+Desarrollado por:
+
+- David Álvarez Iglesias
+
+---
+
+
+A continuación, se incluye la documentación original del proyecto con todos los detalles técnicos y requisitos funcionales.
+
 # Servidor Híbrido de Documentos Estructurados
 
 ## Objetivo
