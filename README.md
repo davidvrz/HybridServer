@@ -18,6 +18,9 @@ Desarrollado por:
 
 - David Álvarez Iglesias
 
+
+⚠️ Este proyecto fue desarrollado con fines académicos. No está pensado para producción y puede contener dependencias con vulnerabilidades conocidas.
+
 ---
 
 
